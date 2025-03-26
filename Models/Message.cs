@@ -1,19 +1,21 @@
-﻿using System;
-using Newtonsoft.Json;
-
-namespace ChatBotClient.Models
+﻿namespace ChatBotClient.Models
 {
+	public enum MessageStatus
+	{
+		None,
+		Sending,
+		Sent,
+		Delivered,
+		Read,
+		Error
+
+	}
+
 	public class Message
 	{
-		[JsonProperty("text")]
+		public string Author { get; set; }
 		public string Text { get; set; }
-
-		[JsonProperty("author")]
-		public string Author { get; set; } // "User" или "Bot"
-
-		[JsonProperty("timestamp1")]
 		public DateTime Timestamp { get; set; }
-
-		public string Status { get; set; } // "Sending...", "Sent", "Failed"
+		public MessageStatus Status { get; set; }
 	}
 }

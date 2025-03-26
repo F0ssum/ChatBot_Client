@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using ChatBotClient.Views;
+using System.Windows;
 
 namespace ChatBotClient
 {
@@ -6,7 +7,9 @@ namespace ChatBotClient
 	{
 		protected override void OnStartup(StartupEventArgs e)
 		{
-
+			base.OnStartup(e);
+			var loginPage = new LoginPage();
+			loginPage.Show();
 		}
 	}
 }

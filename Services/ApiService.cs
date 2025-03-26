@@ -20,19 +20,59 @@ namespace ChatBotClient.Services
 			};
 		}
 
-		public async Task<string> SendMessageAsync(string message, ObservableCollection<Message> history)
+		// Установка токена после входа
+		public void SetToken(string token)
 		{
-			// Формат, совместимый с сервером
+			_httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+		}
+
+		// Регистрация
+		public async Task<bool> RegisterAsync(string username, string password, string email)
+		{
+			var payload = new { username, password, email };
+			var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+
+			HttpResponseMessage response = await _httpClient.PostAsync("auth/register", content);
+			response.EnsureSuccessStatusCode();
+			return true;
+		}
+
+		// Вход
+		public async Task<string> LoginAsync(string username, string password)
+		{
+			var payload = new { username, password };
+			var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+
+			HttpResponseMessage response = await _httpClient.PostAsync("auth/login", content);
+			response.EnsureSuccessStatusCode();
+
+			string responseBody = await response.Content.ReadAsStringAsync();
+			var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
+			return jsonResponse.access_token?.ToString() ?? throw new Exception("Invalid login response");
+		}
+
+		// Получение профиля
+		public async Task<UserProfile> GetProfileAsync()
+		{
+			HttpResponseMessage response = await _httpClient.GetAsync("auth/profile");
+			response.EnsureSuccessStatusCode();
+			string responseBody = await response.Content.ReadAsStringAsync();
+			return JsonConvert.DeserializeObject<UserProfile>(responseBody);
+		}
+
+		// Отправка сообщения (обновим user_id)
+		public async Task<string> SendMessageAsync(string userId, string message, ObservableCollection<Message> history)
+		{
 			var serializedHistory = history.Select(m => new
 			{
 				author = m.Author.ToLower(),
 				text = m.Text
 			}).ToList();
 
-			var payload = new { user_id = "123", message, history = serializedHistory };
+			var payload = new { user_id = userId, message, history = serializedHistory };
 			var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
 
-			HttpResponseMessage response = await _httpClient.PostAsync("chat", content);
+			HttpResponseMessage response = await _httpClient.PostAsync("chat/", content);
 			response.EnsureSuccessStatusCode();
 
 			string responseBody = await response.Content.ReadAsStringAsync();
@@ -40,12 +80,23 @@ namespace ChatBotClient.Services
 			return jsonResponse.bot_response?.ToString() ?? throw new Exception("Invalid response format");
 		}
 
-		public async Task<List<Message>> GetHistoryAsync()
+		// Получение истории
+		public async Task<List<Message>> GetHistoryAsync(string userId)
 		{
-			HttpResponseMessage response = await _httpClient.GetAsync("get-history/123");
+			HttpResponseMessage response = await _httpClient.GetAsync($"chat/get-history/{userId}");
 			response.EnsureSuccessStatusCode();
 			string responseBody = await response.Content.ReadAsStringAsync();
-			return JsonConvert.DeserializeObject<List<Message>>(responseBody) ?? new List<Message>();
+			return JsonConvert.DeserializeObject<List<Message>>(responseBody) ?? [];
+		}
+
+		// Получение статистики настроений
+		public async Task<Dictionary<string, int>> GetMoodStatsAsync(string userId)
+		{
+			HttpResponseMessage response = await _httpClient.GetAsync($"chat/mood-stats/{userId}");
+			response.EnsureSuccessStatusCode();
+			string responseBody = await response.Content.ReadAsStringAsync();
+			var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
+			return JsonConvert.DeserializeObject<Dictionary<string, int>>(jsonResponse.mood_stats.ToString());
 		}
 
 		public void Dispose()
@@ -53,4 +104,5 @@ namespace ChatBotClient.Services
 			_httpClient?.Dispose();
 		}
 	}
+
 }

@@ -8,8 +8,8 @@ namespace ChatBotClient
 		protected override void OnStartup(StartupEventArgs e)
 		{
 			base.OnStartup(e);
-			var loginPage = new LoginPage();
-			loginPage.Show();
+			var chatPage = new ChatPage();
+			chatPage.Show();
 		}
 	}
 }

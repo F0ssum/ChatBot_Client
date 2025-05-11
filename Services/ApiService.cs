@@ -1,8 +1,9 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using System.Collections.ObjectModel;
 using ChatBotClient.Models;
 
 namespace ChatBotClient.Services
@@ -20,89 +21,80 @@ namespace ChatBotClient.Services
 			};
 		}
 
-		// Установка токена после входа
-		public void SetToken(string token)
-		{
-			_httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-		}
-
-		// Регистрация
-		public async Task<bool> RegisterAsync(string username, string password, string email)
-		{
-			var payload = new { username, password, email };
-			var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-
-			HttpResponseMessage response = await _httpClient.PostAsync("auth/register", content);
-			response.EnsureSuccessStatusCode();
-			return true;
-		}
-
-		// Вход
-		public async Task<string> LoginAsync(string username, string password)
-		{
-			var payload = new { username, password };
-			var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-
-			HttpResponseMessage response = await _httpClient.PostAsync("auth/login", content);
-			response.EnsureSuccessStatusCode();
-
-			string responseBody = await response.Content.ReadAsStringAsync();
-			var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
-			return jsonResponse.access_token?.ToString() ?? throw new Exception("Invalid login response");
-		}
-
-		// Получение профиля
-		public async Task<UserProfile> GetProfileAsync()
-		{
-			HttpResponseMessage response = await _httpClient.GetAsync("auth/profile");
-			response.EnsureSuccessStatusCode();
-			string responseBody = await response.Content.ReadAsStringAsync();
-			return JsonConvert.DeserializeObject<UserProfile>(responseBody);
-		}
-
-		// Отправка сообщения (обновим user_id)
 		public async Task<string> SendMessageAsync(string userId, string message, ObservableCollection<Message> history)
 		{
-			var serializedHistory = history.Select(m => new
-			{
-				author = m.Author.ToLower(),
-				text = m.Text
-			}).ToList();
+			if (string.IsNullOrEmpty(userId))
+				throw new ArgumentNullException(nameof(userId), "User ID is not set.");
 
+			// Попробуйте разные варианты сериализации history
+			var serializedHistory = history.Select(m => new { author = m.Author, text = m.Text }).ToList();
 			var payload = new { user_id = userId, message, history = serializedHistory };
-			var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+			var jsonPayload = JsonConvert.SerializeObject(payload, Formatting.Indented);
+			var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-			HttpResponseMessage response = await _httpClient.PostAsync("chat/", content);
-			response.EnsureSuccessStatusCode();
+			Console.WriteLine($"Sending message to {_httpClient.BaseAddress}chat/ with payload: {jsonPayload}");
+			Console.WriteLine($"Content-Type: {content.Headers.ContentType}");
 
-			string responseBody = await response.Content.ReadAsStringAsync();
-			var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
-			return jsonResponse.bot_response?.ToString() ?? throw new Exception("Invalid response format");
+			try
+			{
+				HttpResponseMessage response = await _httpClient.PostAsync("chat/", content);
+
+				if (!response.IsSuccessStatusCode)
+				{
+					string errorContent = await response.Content.ReadAsStringAsync();
+					Console.WriteLine($"Request failed: {response.StatusCode}, {errorContent}");
+					throw new HttpRequestException($"Request failed: {response.StatusCode}, {errorContent}");
+				}
+
+				string responseBody = await response.Content.ReadAsStringAsync();
+				Console.WriteLine($"Response: {responseBody}");
+				var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
+				return jsonResponse.bot_response?.ToString() ?? throw new Exception("Invalid response format");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Exception: {ex.Message}");
+				throw;
+			}
 		}
-
-		// Получение истории
 		public async Task<List<Message>> GetHistoryAsync(string userId)
 		{
+			Console.WriteLine($"Fetching history from {_httpClient.BaseAddress}chat/get-history/{userId}");
 			HttpResponseMessage response = await _httpClient.GetAsync($"chat/get-history/{userId}");
-			response.EnsureSuccessStatusCode();
+
+			if (!response.IsSuccessStatusCode)
+			{
+				string errorContent = await response.Content.ReadAsStringAsync();
+				Console.WriteLine($"Request failed: {response.StatusCode}, {errorContent}");
+				throw new HttpRequestException($"Request failed: {response.StatusCode}, {errorContent}");
+			}
+
 			string responseBody = await response.Content.ReadAsStringAsync();
+			Console.WriteLine($"Response: {responseBody}");
 			return JsonConvert.DeserializeObject<List<Message>>(responseBody) ?? [];
 		}
 
-		// Получение статистики настроений
 		public async Task<Dictionary<string, int>> GetMoodStatsAsync(string userId)
 		{
+			Console.WriteLine($"Fetching mood stats from {_httpClient.BaseAddress}chat/mood-stats/{userId}");
 			HttpResponseMessage response = await _httpClient.GetAsync($"chat/mood-stats/{userId}");
-			response.EnsureSuccessStatusCode();
+
+			if (!response.IsSuccessStatusCode)
+			{
+				string errorContent = await response.Content.ReadAsStringAsync();
+				Console.WriteLine($"Request failed: {response.StatusCode}, {errorContent}");
+				throw new HttpRequestException($"Request failed: {response.StatusCode}, {errorContent}");
+			}
+
 			string responseBody = await response.Content.ReadAsStringAsync();
+			Console.WriteLine($"Response: {responseBody}");
 			var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
 			return JsonConvert.DeserializeObject<Dictionary<string, int>>(jsonResponse.mood_stats.ToString());
 		}
-
+		
 		public void Dispose()
 		{
 			_httpClient?.Dispose();
 		}
 	}
-
 }

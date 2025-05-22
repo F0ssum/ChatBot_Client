@@ -1,240 +1,175 @@
-﻿<Window x:Class="ChatBotClient.Views.ChatPage"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:ChatBotClient.Views"
-        xmlns:converters="clr-namespace:ChatBotClient.Converters"
-        xmlns:system="clr-namespace:System;assembly=mscorlib"
-        Title="Chat" Height="600" Width="800"
-        WindowStartupLocation="CenterScreen"
-        Background="#F5F7FA">
+﻿<Page x:Class="ChatBotClient.Views.ChatPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      xmlns:converters="clr-namespace:ChatBotClient.Converters"
+      mc:Ignorable="d"
+      Background="{StaticResource BackgroundBrush}"
+      UseLayoutRounding="True"
+      SnapsToDevicePixels="True"
+      TextOptions.TextFormattingMode="Display">
 
-    <Window.Resources>
-        <!-- Converters -->
+    <Page.Resources>
         <converters:MessageConverter x:Key="MessageConverter"/>
-        <converters:KeyValueConverter x:Key="KeyValueConverter"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+    </Page.Resources>
 
-        <!-- DropShadowEffect Resource -->
-        <DropShadowEffect x:Key="DropShadowEffect" ShadowDepth="2" BlurRadius="10" Opacity="0.1" Color="Black"/>
+    <Grid>
+        <Border Style="{StaticResource BaseBorderStyle}" Margin="20" Effect="{StaticResource DropShadowEffect}">
+            <Grid Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <!-- Modern Color Palette -->
-        <SolidColorBrush x:Key="PrimaryColor" Color="#007BFF"/>
-        <!-- Blue for buttons -->
-        <SolidColorBrush x:Key="SecondaryColor" Color="#6C757D"/>
-        <!-- Gray for secondary elements -->
-        <SolidColorBrush x:Key="BackgroundColor" Color="#FFFFFF"/>
-        <!-- White for panels -->
-        <SolidColorBrush x:Key="ChatBubbleUser" Color="#007BFF"/>
-        <!-- User message bubble -->
-        <SolidColorBrush x:Key="ChatBubbleBot" Color="#E9ECEF"/>
-        <!-- Bot message bubble -->
+                <!-- Заголовок -->
+                <TextBlock Text="Чат с ботом" Style="{StaticResource BaseTextStyle}" FontSize="18" FontWeight="SemiBold"
+                           Margin="0,0,0,10"/>
 
-        <!-- TextBlock Style -->
-        <Style TargetType="TextBlock" x:Key="ProfileTextStyle">
-            <Setter Property="Margin" Value="0,0,0,8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Foreground" Value="#343A40"/>
-        </Style>
-
-        <!-- Button Style -->
-        <Style TargetType="Button" x:Key="ModernButtonStyle">
-            <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="5"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#0056B3"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#003087"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- TextBox Style -->
-        <Style TargetType="TextBox" x:Key="ModernTextBoxStyle">
-            <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
-            <Setter Property="BorderBrush" Value="#CED4DA"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="5">
-                            <ScrollViewer x:Name="PART_ContentHost" Margin="2"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ComboBox Style -->
-        <Style TargetType="ComboBox" x:Key="ModernComboBoxStyle">
-            <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
-            <Setter Property="BorderBrush" Value="#CED4DA"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="5">
-                            <Grid>
-                                <ToggleButton x:Name="ToggleButton" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
-                                <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}"/>
-                                <Popup x:Name="Popup" IsOpen="{TemplateBinding IsDropDownOpen}">
-                                    <Border Background="{StaticResource BackgroundColor}" BorderBrush="#CED4DA" BorderThickness="1">
-                                        <ScrollViewer>
-                                            <ItemsPresenter/>
-                                        </ScrollViewer>
+                <!-- История сообщений -->
+                <Border Grid.Row="1" Style="{StaticResource BaseBorderStyle}" CornerRadius="10" Padding="10"
+                        Effect="{StaticResource DropShadowEffect}">
+                    <ListBox ItemsSource="{Binding Messages}" Style="{StaticResource ListBoxStyle}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid MaxWidth="500" Margin="5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Background="{Binding Author, Converter={StaticResource MessageConverter}}"
+                                            Style="{StaticResource MessageBubbleStyle}"
+                                            HorizontalAlignment="{Binding Author, Converter={StaticResource MessageConverter}, ConverterParameter=Alignment}"
+                                            Grid.Column="{Binding Author, Converter={StaticResource MessageConverter}, ConverterParameter=GridColumn}"
+                                            Padding="10" CornerRadius="10">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Text}" TextWrapping="Wrap"
+                                                       Style="{StaticResource BaseTextStyle}"/>
+                                            <TextBlock Text="{Binding Timestamp, StringFormat='HH:mm'}"
+                                                       Style="{StaticResource BaseTextStyle}" FontSize="10"
+                                                       Foreground="{StaticResource DividerBrush}" HorizontalAlignment="Right"/>
+                                        </StackPanel>
                                     </Border>
-                                </Popup>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+
+                <!-- Панель ввода -->
+                <TextBox Grid.Row="2" Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource ModernTextBoxStyle}" Margin="0,20,0,0"
+                         AcceptsReturn="False" AcceptsTab="False"
+                         materialDesign:HintAssist.Hint="Введите сообщение...">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding SendMessageCommand}"/>
+                    </TextBox.InputBindings>
+                    <TextBox.Template>
+                        <ControlTemplate TargetType="TextBox">
+                            <Grid>
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="4">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="40"/>
+                                            <ColumnDefinition Width="40"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="40"/>
+                                            <ColumnDefinition Width="40"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Content="😊" Style="{StaticResource IconButtonStyle}"
+                                                ToolTip="Добавить эмодзи" Command="{Binding AddEmojiCommand}"/>
+                                        <Button Grid.Column="1" Content="📎" Style="{StaticResource IconButtonStyle}"
+                                                ToolTip="Прикрепить файл" Command="{Binding AttachFileCommand}"/>
+                                        <ScrollViewer Grid.Column="2" x:Name="PART_ContentHost" Margin="5,2"
+                                                      VerticalAlignment="Center"/>
+                                        <Button Grid.Column="3" Content="🎙" Style="{StaticResource IconButtonStyle}"
+                                                ToolTip="Голосовой ввод" Command="{Binding VoiceInputCommand}"/>
+                                        <Button Grid.Column="4" Content="➤" Style="{StaticResource IconButtonStyle}"
+                                                ToolTip="Отправить" Command="{Binding SendMessageCommand}"/>
+                                    </Grid>
+                                </Border>
                             </Grid>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsFocused" Value="True">
+                                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </TextBox.Template>
+                    <TextBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Добавить эмодзи" Command="{Binding AddEmojiCommand}"/>
+                            <MenuItem Header="Прикрепить файл" Command="{Binding AttachFileCommand}"/>
+                            <MenuItem Header="Посмотреть историю" Command="{Binding ShowChatHistoryCommand}"/>
+                            <MenuItem Header="Начать новый диалог" Command="{Binding NewDialogCommand}"/>
+                        </ContextMenu>
+                    </TextBox.ContextMenu>
+                </TextBox>
 
-        <!-- Chat ListBox Style -->
-        <Style TargetType="ListBox" x:Key="ChatListBoxStyle">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
-            <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
-            <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
-            <Setter Property="Padding" Value="10"/>
-        </Style>
-    </Window.Resources>
-
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-
-        <!-- First Run Panel -->
-        <Border Grid.Row="0" Background="{StaticResource BackgroundColor}"
-                CornerRadius="10" Padding="15" Margin="0,0,0,20"
-                Visibility="{Binding IsFirstRun, Converter={StaticResource BooleanToVisibilityConverter}}"
-                Effect="{StaticResource DropShadowEffect}">
-            <StackPanel>
-                <TextBlock Text="Welcome! Enter your User ID (nickname):" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,10"/>
-                <TextBox Text="{Binding InputUserId, UpdateSourceTrigger=PropertyChanged}" 
-                         Style="{StaticResource ModernTextBoxStyle}" Width="250"/>
-                <Button Content="Start Chat" Command="{Binding StartChatCommand}" 
-                        Style="{StaticResource ModernButtonStyle}" Margin="0,10,0,0" Width="120"/>
-            </StackPanel>
-        </Border>
-
-        <!-- Profile Panel -->
-        <Border Grid.Row="0" Background="{StaticResource BackgroundColor}"
-                CornerRadius="10" Padding="15" Margin="0,0,0,20"
-                Visibility="{Binding IsFirstRun, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
-                Effect="{StaticResource DropShadowEffect}">
-            <StackPanel>
-                <!-- Current User ID -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBlock Text="Current User ID:" FontWeight="SemiBold" Style="{StaticResource ProfileTextStyle}"/>
-                    <ComboBox ItemsSource="{Binding UserIds}" 
-                              SelectedItem="{Binding SelectedUserId, UpdateSourceTrigger=PropertyChanged}"
-                              Style="{StaticResource ModernComboBoxStyle}" Width="200" Margin="10,0,0,0"/>
+                <!-- Панель навигации -->
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                    <Button Content="{materialDesign:PackIcon Kind=Book}"
+                            Style="{StaticResource IconButtonStyle}" ToolTip="Перейти к дневнику"
+                            Command="{Binding GoToDiaryCommand}"/>
                 </StackPanel>
-
-                <!-- New User ID -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBlock Text="New User ID:" Style="{StaticResource ProfileTextStyle}"/>
-                    <TextBox Text="{Binding NewUserId, UpdateSourceTrigger=PropertyChanged}" 
-                             Style="{StaticResource ModernTextBoxStyle}" Width="200" Margin="10,0,10,0"/>
-                    <Button Content="Create" Command="{Binding CreateUserIdCommand}" 
-                            Style="{StaticResource ModernButtonStyle}" Width="100"/>
-                </StackPanel>
-
-                <!-- Mood Stats -->
-                <TextBlock Text="Mood Stats:" FontWeight="SemiBold" Style="{StaticResource ProfileTextStyle}"/>
-                <ItemsControl ItemsSource="{Binding MoodStats}" Margin="10,0,0,0">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Path=., Converter={StaticResource KeyValueConverter}}"
-                                       Style="{StaticResource ProfileTextStyle}"/>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
+            </Grid>
         </Border>
 
-        <!-- Chat Area -->
-        <Border Grid.Row="1" Background="{StaticResource BackgroundColor}"
-                CornerRadius="10" Padding="10"
-                Visibility="{Binding IsFirstRun, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
-                Effect="{StaticResource DropShadowEffect}">
-            <ListBox ItemsSource="{Binding Messages}" 
-                     Style="{StaticResource ChatListBoxStyle}"
-                     VirtualizingStackPanel.IsVirtualizing="True"
-                     VirtualizingStackPanel.VirtualizationMode="Recycling">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Border Background="{Binding IsUserMessage, Converter={StaticResource MessageConverter}, ConverterParameter=Background}"
-                                CornerRadius="10" Padding="10" Margin="5"
-                                MaxWidth="500"
-                                HorizontalAlignment="{Binding IsUserMessage, Converter={StaticResource MessageConverter}, ConverterParameter=Alignment}">
-                            <TextBlock Text="{Binding Path=., Converter={StaticResource MessageConverter}}"
-                                       TextWrapping="Wrap" FontSize="14" Foreground="#212529"/>
-                        </Border>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+        <!-- Модальное окно для подтверждения нового диалога -->
+        <Border x:Name="NewDialogModal" Background="{StaticResource ModalOverlayBrush}"
+                Visibility="{Binding NewDialogModalVisibility, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Style="{StaticResource BaseBorderStyle}" CornerRadius="10" Padding="20"
+                    Width="300" Height="150" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Effect="{StaticResource DropShadowEffect}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Начать новый диалог? Текущая история будет очищена."
+                               Style="{StaticResource BaseTextStyle}" TextWrapping="Wrap" FontSize="14"/>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                        <Button Content="Отмена" Style="{StaticResource ModernButtonStyle}" Margin="0,0,10,0"
+                                Command="{Binding CancelNewDialogCommand}"/>
+                        <Button Content="Подтвердить" Style="{StaticResource ModernButtonStyle}"
+                                Command="{Binding ConfirmNewDialogCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Border>
 
-        <!-- Input Area -->
-        <Grid Grid.Row="2" Margin="0,20,0,0"
-              Visibility="{Binding IsFirstRun, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <TextBox Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" 
-                     Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,10,0"/>
-
-            <Button Command="{Binding SendCommand}" Content="Send" 
-                    Style="{StaticResource ModernButtonStyle}" Grid.Column="1" Width="100"/>
-
-            <TextBlock Text="{Binding SendStatus}" Grid.Column="2" 
-                       VerticalAlignment="Center" Foreground="{StaticResource SecondaryColor}" Margin="10,0,0,0"/>
-        </Grid>
+        <!-- Модальное окно для истории чатов -->
+        <Border x:Name="ChatHistoryModal" Background="{StaticResource ModalOverlayBrush}"
+                Visibility="{Binding ChatHistoryModalVisibility, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Style="{StaticResource BaseBorderStyle}" CornerRadius="10" Padding="20"
+                    Width="400" Height="300" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Effect="{StaticResource DropShadowEffect}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="История чатов" Style="{StaticResource BaseTextStyle}" FontSize="16" FontWeight="SemiBold"
+                               Margin="0,0,0,10"/>
+                    <ListBox Grid.Row="1" ItemsSource="{Binding ChatHistory}" Style="{StaticResource ListBoxStyle}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Style="{StaticResource BaseTextStyle}"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Button Grid.Row="2" Content="Закрыть" Style="{StaticResource ModernButtonStyle}"
+                            HorizontalAlignment="Right" Margin="0,10,0,0" Command="{Binding CloseChatHistoryCommand}"/>
+                </Grid>
+            </Border>
+        </Border>
     </Grid>
-</Window>
+</Page>

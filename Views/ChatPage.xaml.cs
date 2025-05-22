@@ -1,30 +1,33 @@
-﻿using ChatBotClient.Models;
-using ChatBotClient.Services;
-using ChatBotClient.ViewModels;
+﻿using ChatBotClient.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using System;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace ChatBotClient.Views
 {
-	public partial class ChatPage : Window
+	public partial class ChatPage : Page
 	{
-		public ChatPage()
+		private readonly ChatViewModel _viewModel;
+
+		public ChatPage(IServiceProvider serviceProvider)
 		{
 			InitializeComponent();
-
 			try
 			{
-				var apiService = new ApiService();
-				var storageService = new LocalStorageService();
-				var viewModel = new ChatViewModel(apiService, storageService);
-				DataContext = viewModel;
-				Loaded += async (s, e) => await viewModel.InitializeAsync();
+				_viewModel = serviceProvider.GetRequiredService<ChatViewModel>();
+				DataContext = _viewModel;
+				Loaded += async (s, e) =>
+				{
+					await _viewModel.InitializeAsync();
+					Log.Information("ChatPage initialized");
+				};
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"Failed to initialize chat: {ex}");
-				MessageBox.Show($"Failed to initialize chat: {ex.Message}\nStackTrace: {ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-				Close();
+				Log.Error(ex, "Failed to initialize ChatPage: {Message}", ex.Message);
+				MessageBox.Show($"Failed to initialize chat: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		}
 	}

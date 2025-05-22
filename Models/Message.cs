@@ -1,4 +1,5 @@
-﻿namespace ChatBotClient.Models
+﻿using Newtonsoft.Json;
+namespace ChatBotClient.Models
 {
 	public enum MessageStatus
 	{
@@ -8,7 +9,6 @@
 		Delivered,
 		Read,
 		Error
-
 	}
 
 	public class Message
@@ -17,5 +17,7 @@
 		public string Text { get; set; }
 		public DateTime Timestamp { get; set; }
 		public MessageStatus Status { get; set; }
+		[JsonIgnore]
+		public bool IsUserMessage => Author == "User";
 	}
 }

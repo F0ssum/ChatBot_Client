@@ -1,0 +1,92 @@
+﻿<Window x:Class="ChatBotClient.Views.Main"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ChatBotClient.Views"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="EmotionAid" Height="600" Width="1000"
+        Background="{StaticResource BackgroundBrush}"
+        WindowStyle="SingleBorderWindow" AllowsTransparency="False"
+        WindowStartupLocation="CenterScreen"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display">
+
+    <Grid>
+        <Border Style="{StaticResource BaseBorderStyle}" Margin="10" Effect="{StaticResource DropShadowEffect}">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Кнопки управления окном -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="{materialDesign:PackIcon Kind=WindowMinimize}" 
+                            Style="{StaticResource WindowControlButtonStyle}" 
+                            Command="{Binding MinimizeCommand}"/>
+                    <Button Content="{materialDesign:PackIcon Kind=WindowMaximize}" 
+                            Style="{StaticResource WindowControlButtonStyle}" 
+                            Command="{Binding MaximizeRestoreCommand}" x:Name="MaximizeButton"/>
+                    <Button Content="{materialDesign:PackIcon Kind=Close}" 
+                            Style="{StaticResource WindowControlButtonStyle}" 
+                            Command="{Binding CloseCommand}"/>
+                </StackPanel>
+
+                <!-- Кнопка вызова навигационного меню -->
+                <Button Content="{materialDesign:PackIcon Kind=Menu}" 
+                        Style="{StaticResource MenuButtonStyle}" 
+                        Grid.Row="1" Margin="10" HorizontalAlignment="Left"
+                        Command="{Binding ToggleNavMenuCommand}"/>
+
+                <!-- Frame для страниц -->
+                <Frame x:Name="MainFrame" Grid.Row="2" NavigationUIVisibility="Hidden"/>
+
+                <!-- Панель уведомлений (скрыта, как в Interface) -->
+                <Border Grid.Row="3" Style="{StaticResource BaseBorderStyle}" Margin="0,10,0,0" 
+                        Visibility="Collapsed" x:Name="NotificationPanel" Effect="{StaticResource DropShadowEffect}">
+                    <TextBlock Text="Уведомление: Действие выполнено" Style="{StaticResource BaseTextStyle}" Margin="10"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Всплывающее навигационное меню -->
+        <Border x:Name="NavMenu" Background="{StaticResource ModalOverlayBrush}" Visibility="{Binding IsNavMenuVisible}">
+            <Border Style="{StaticResource BaseBorderStyle}" Width="200" Height="200" 
+                    VerticalAlignment="Top" HorizontalAlignment="Left" Margin="50,50,0,0"
+                    Effect="{StaticResource DropShadowEffect}">
+                <StackPanel Orientation="Vertical" Margin="10">
+                    <Button Content="Чат" Style="{StaticResource CircularNavButtonStyle}" Tag="{materialDesign:PackIcon Kind=Chat}"
+                            Command="{Binding NavigateToChatCommand}" Margin="0,5"/>
+                    <Button Content="Дневник" Style="{StaticResource CircularNavButtonStyle}" Tag="{materialDesign:PackIcon Kind=Book}"
+                            Command="{Binding NavigateToDiaryCommand}" Margin="0,5"/>
+                    <Button Content="Настройки" Style="{StaticResource CircularNavButtonStyle}" Tag="{materialDesign:PackIcon Kind=Settings}"
+                            Command="{Binding NavigateToSettingsCommand}" Margin="0,5"/>
+                </StackPanel>
+                <!-- Анимация появления меню -->
+                <Border.Triggers>
+                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"
+                                                 EasingFunction="{StaticResource MaterialDesignEasingFunction}"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" 
+                                                 From="0" To="1" Duration="0:0:0.3"
+                                                 EasingFunction="{StaticResource MaterialDesignEasingFunction}"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" 
+                                                 From="0" To="1" Duration="0:0:0.3"
+                                                 EasingFunction="{StaticResource MaterialDesignEasingFunction}"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Border.Triggers>
+                <Border.RenderTransform>
+                    <ScaleTransform CenterX="100" CenterY="100"/>
+                </Border.RenderTransform>
+            </Border>
+        </Border>
+    </Grid>
+</Window>

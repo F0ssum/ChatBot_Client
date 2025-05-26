@@ -1,8 +1,8 @@
-﻿<Application x:Class="ChatBotClient.App"
+﻿<Application x:Class="ChatBotClient.Application"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:converters="clr-namespace:ChatBotClient.Converters">
+             xmlns:converters="clr-namespace:ChatBotClient.Core.Converters">
     <Application.Resources>
         <ResourceDictionary>
             <!-- Конвертеры -->
@@ -11,16 +11,13 @@
             <converters:MessageConverter x:Key="MessageConverter" />
             <converters:KeyValueConverter x:Key="KeyValueConverter" />
             <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
             <converters:ListToStringConverter x:Key="ListToStringConverter" />
 
-            <!-- Объединённые словари (темы и стили) -->
+            <!-- Темы и стили -->
             <ResourceDictionary.MergedDictionaries>
-                <!-- Базовая тема Material Design (Light) -->
-                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="DeepPurple" SecondaryColor="Lime" />
-                <!-- Стандартные стили Material Design -->
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
-                <!-- Локальные стили -->
-                <ResourceDictionary Source="Resources/Styles.xaml" />
+                <ResourceDictionary Source="/Resources/Styles/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

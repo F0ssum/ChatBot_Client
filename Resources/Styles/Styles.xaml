@@ -1,0 +1,349 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:converters="clr-namespace:ChatBotClient.Core.Converters">
+    <!-- Конвертер -->
+    <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+    
+    <!-- Основные цвета приложения -->
+    <Color x:Key="BackgroundColor">White</Color>
+    <Color x:Key="PrimaryColor">#6200EE</Color>
+    <Color x:Key="AccentColor">#03DAC5</Color>
+    <Color x:Key="BodyColor">Black</Color>
+    <Color x:Key="DividerColor">#BDBDBD</Color>
+    <Color x:Key="ErrorColor">#B00020</Color>
+    <Color x:Key="PaperHoverColor">#F5F5F5</Color>
+    <Color x:Key="SecondaryColor">#6C757D</Color>
+
+    <!-- Кисти на основе цветов -->
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="BodyBrush" Color="{StaticResource BodyColor}" />
+    <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource DividerColor}" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
+    <SolidColorBrush x:Key="PaperHoverBrush" Color="{StaticResource PaperHoverColor}" />
+    <SolidColorBrush x:Key="ModalOverlayBrush" Color="Black" Opacity="0.5" />
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryColor}" />
+
+    <!-- Шрифт по умолчанию -->
+    <FontFamily x:Key="MaterialDesignFont">Segoe UI</FontFamily>
+
+    <!-- Эффекты -->
+    <DropShadowEffect x:Key="DropShadowEffect" ShadowDepth="2" BlurRadius="5" Opacity="0.3" Color="Black" />
+
+    <!-- Easing-функция для анимаций -->
+    <CubicEase x:Key="MaterialDesignEasingFunction" EasingMode="EaseOut" />
+
+    <!-- Базовые стили -->
+    <Style TargetType="TextBlock" x:Key="BaseTextStyle" BasedOn="{StaticResource MaterialDesignBody1TextBlock}">
+        <Setter Property="FontFamily" Value="{StaticResource MaterialDesignFont}" />
+        <Setter Property="Foreground" Value="{StaticResource BodyBrush}" />
+    </Style>
+
+    <Style TargetType="Border" x:Key="BaseBorderStyle">
+        <Setter Property="Background" Value="{StaticResource BackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style TargetType="ListBox" x:Key="ListBoxStyle" BasedOn="{StaticResource MaterialDesignListBox}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    </Style>
+
+    <Style TargetType="Border" x:Key="MessageBubbleStyle" BasedOn="{StaticResource BaseBorderStyle}">
+        <Setter Property="Padding" Value="12" />
+        <Setter Property="Margin" Value="8" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsNewMessage}" Value="True">
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                             From="0" To="1" Duration="0:0:0.3"
+                                             EasingFunction="{StaticResource MaterialDesignEasingFunction}" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.EnterActions>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Стили кнопок -->
+    <Style TargetType="Button" x:Key="MenuButtonStyle" BasedOn="{StaticResource MaterialDesignFlatButton}">
+        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Effect" Value="{StaticResource DropShadowEffect}" />
+        <Setter Property="materialDesign:RippleAssist.Feedback" Value="{StaticResource AccentBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#3700B3" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="#1C2526" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Button" x:Key="IconButtonStyle" BasedOn="{StaticResource MaterialDesignIconButton}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource SecondaryBrush}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Margin" Value="4,0" />
+        <Setter Property="Opacity" Value="0.7" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="materialDesign:RippleAssist.Feedback" Value="{StaticResource AccentBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="5">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Opacity" Value="1" />
+                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Opacity" Value="0.8" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="RadioButton" x:Key="TabStyle" BasedOn="{StaticResource MaterialDesignTabRadioButton}">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Margin" Value="0,0,10,0" />
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource BodyBrush}" />
+        <Setter Property="Effect" Value="{StaticResource DropShadowEffect}" />
+        <Setter Property="materialDesign:RippleAssist.Feedback" Value="{StaticResource AccentBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="10">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+                            <Setter Property="Foreground" Value="White" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource PaperHoverBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Button" x:Key="ModernButtonStyle" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="materialDesign:RippleAssist.Feedback" Value="{StaticResource AccentBrush}" />
+    </Style>
+
+    <Style TargetType="Button" x:Key="WindowControlButtonStyle" BasedOn="{StaticResource MaterialDesignFlatButton}">
+        <Setter Property="Background" Value="{StaticResource SecondaryBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Width" Value="30" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Margin" Value="5" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="15">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#495057" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="#343A40" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Button" x:Key="CircularNavButtonStyle" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Width" Value="160" />
+        <Setter Property="Height" Value="50" />
+        <Setter Property="Margin" Value="0,10" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Effect" Value="{StaticResource DropShadowEffect}" />
+        <Setter Property="materialDesign:RippleAssist.Feedback" Value="{StaticResource AccentBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="20" Padding="10">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <ContentPresenter Content="{TemplateBinding Tag}" Margin="0,0,5,0"/>
+                            <ContentPresenter />
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#3700B3" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="#1C2526" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="TextBox" x:Key="ModernTextBoxStyle" BasedOn="{StaticResource MaterialDesignTextBox}">
+        <Setter Property="Background" Value="{StaticResource BackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="40,8,70,8" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontFamily" Value="{StaticResource MaterialDesignFont}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Effect" Value="{StaticResource DropShadowEffect}" />
+        <Setter Property="materialDesign:HintAssist.HintOpacity" Value="0.5" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Grid>
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="2" VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="TextBox" x:Key="ModernTextBoxWithHintStyle" BasedOn="{StaticResource ModernTextBoxStyle}">
+        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Grid>
+                        <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="10">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="2"/>
+                        </Border>
+                        <TextBlock Text="Новый тег..." Foreground="{StaticResource SecondaryBrush}"
+                               Margin="10,0,0,0" VerticalAlignment="Center"
+                               Visibility="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource StringToVisibilityConverter}}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <Style TargetType="ToggleButton" x:Key="BaseToggleButtonStyle" BasedOn="{StaticResource MaterialDesignToggleButton}">
+        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Effect" Value="{StaticResource DropShadowEffect}" />
+        <Setter Property="materialDesign:RippleAssist.Feedback" Value="{StaticResource AccentBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#3700B3" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="#1C2526" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <Style TargetType="ToggleButton" x:Key="ModernToggleButtonStyle" BasedOn="{StaticResource BaseToggleButtonStyle}">
+        <Setter Property="Background" Value="{StaticResource BackgroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource BodyBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource PaperHoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="{StaticResource DividerBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+                            <Setter Property="Foreground" Value="White" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+</ResourceDictionary>

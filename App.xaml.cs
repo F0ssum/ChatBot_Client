@@ -1,105 +1,104 @@
-﻿using ChatBotClient.Services;
-using ChatBotClient.ViewModels;
-using ChatBotClient.Views;
+﻿using System.Windows;
+using ChatBotClient.Core.Configuration;
+using ChatBotClient.Features.Chat.Views;
+using ChatBotClient.Features.Diary.Views;
+using ChatBotClient.Features.Main;
+using ChatBotClient.Features.Main.Views;
+using ChatBotClient.Features.PrivacyPolicy;
+using ChatBotClient.Features.PrivacyPolicy.Views;
+using ChatBotClient.Features.Services;
+using ChatBotClient.Features.Settings;
+using ChatBotClient.Features.Settings.Views;
+using ChatBotClient.Features.Tree;
+using ChatBotClient.Features.Tree.Views;
+using ChatBotClient.Infrastructure.Service;
+using ChatBotClient.Infrastructure.Services;
+using ChatBotClient.ViewModel;
+using ChatBotClient.ViewModel.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using System;
-using System.Windows;
-using System.Windows.Media;
+
 
 namespace ChatBotClient
 {
-	public partial class App : Application
+	public partial class Application : System.Windows.Application
 	{
 		private readonly IServiceProvider _serviceProvider;
-		private static bool _isMainWindowCreated;
 
-		public App()
+		public Application()
 		{
 			var services = new ServiceCollection();
 			ConfigureServices(services);
 			_serviceProvider = services.BuildServiceProvider();
-			Log.Information("Dependency injection container initialized");
+
+			Log.Logger = new LoggerConfiguration()
+				.WriteTo.Console()
+				.WriteTo.File("Logs/app.log", rollingInterval: RollingInterval.Day)
+				.CreateLogger();
 		}
 
 		private void ConfigureServices(ServiceCollection services)
 		{
-			services.AddSingleton<ApiService>();
+			// Configuration
+			services.AddSingleton<AppConfiguration>(new AppConfiguration
+			{
+				ApiBaseUrl = "http://localhost:5000",
+				LocalModelPath = "Resources/Models/model.bin"
+			});
+
+			// Services
+			services.AddSingleton<NavigationService>();
 			services.AddSingleton<LocalStorageService>();
+			services.AddSingleton<ApiService>();
+			services.AddSingleton<NotificationService>();
+			services.AddSingleton<CacheService>();
+			services.AddSingleton<OfflineQueueService>();
+			services.AddSingleton<AnalyticsService>();
+
+			// ViewModels
+			services.AddTransient<MainViewModel>();
 			services.AddTransient<ChatViewModel>();
 			services.AddTransient<DiaryViewModel>();
 			services.AddTransient<SettingsViewModel>();
-			services.AddTransient<MainViewModel>();
-			services.AddTransient<Main>(); // Используем Transient, чтобы избежать повторной инициализации
+			services.AddTransient<ChatSettingsViewModel>();
+			services.AddTransient<DiarySettingsViewModel>();
+			services.AddTransient<ProfileSettingsViewModel>();
+			services.AddTransient<ModelSettingsViewModel>();
+			services.AddTransient<NotificationSettingsViewModel>();
+			services.AddTransient<TreeViewModel>();
+			services.AddTransient<PrivacyPolicyViewModel>();
+
+			// Views
+			services.AddTransient<Main>();
 			services.AddTransient<ChatPage>();
 			services.AddTransient<DiaryPage>();
 			services.AddTransient<SettingsPage>();
+			services.AddTransient<TreePage>();
+			services.AddTransient<PrivacyPolicyPage>();
 		}
 
 		protected override void OnStartup(StartupEventArgs e)
 		{
-			var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
-			var processes = System.Diagnostics.Process.GetProcessesByName(currentProcess.ProcessName);
-			if (processes.Length > 1)
-			{
-				Log.Warning("Multiple instances of {ProcessName} detected, shutting down", currentProcess.ProcessName);
-				Shutdown();
-				return;
-			}
-
-			Log.Logger = new LoggerConfiguration()
-				.MinimumLevel.Information()
-				.WriteTo.File("logs/app.log", rollingInterval: RollingInterval.Day)
-				.CreateLogger();
-			Log.Information("Application starting up, Process ID: {ProcessId}", currentProcess.Id);
-
 			base.OnStartup(e);
-
-			DispatcherUnhandledException += (s, args) =>
-			{
-				Log.Error(args.Exception, "Unhandled exception: {Message}\nFull StackTrace: {StackTrace}", args.Exception.Message, args.Exception.StackTrace);
-				MessageBox.Show($"Ошибка: {args.Exception.Message}\n{args.Exception.StackTrace}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-				args.Handled = true;
-			};
-
 			try
 			{
-				if (_isMainWindowCreated)
-				{
-					Log.Warning("Main window creation attempted again, skipping");
-					return;
-				}
-
-				Log.Information("Creating Main window");
-				var mainWindow = _serviceProvider.GetRequiredService<Main>();
-				_isMainWindowCreated = true;
-
-				Log.Information("Main window created, showing window");
-				RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
+				var mainWindow = _serviceProvider.GetService<Main>();
+				mainWindow.DataContext = _serviceProvider.GetService<MainViewModel>();
 				mainWindow.Show();
-				mainWindow.Activate();
-				Log.Information("Main window displayed successfully, Visibility: {Visibility}, Opacity: {Opacity}, Position: {Left},{Top}, State: {WindowState}",
-					mainWindow.Visibility, mainWindow.Opacity, mainWindow.Left, mainWindow.Top, mainWindow.WindowState);
+				Log.Information("Application started");
 			}
 			catch (Exception ex)
 			{
-				Log.Error(ex, "Failed to start application: {Message}\nFull StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-				MessageBox.Show($"Failed to start application: {ex.Message}\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+				Log.Error(ex, "Failed to start application");
+				MessageBox.Show($"Failed to start application: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 				Shutdown();
 			}
 		}
 
 		protected override void OnExit(ExitEventArgs e)
 		{
-			Log.Information("Application shutting down");
-			try
-			{
-				Log.CloseAndFlush();
-			}
-			catch (Exception ex)
-			{
-				Log.Error(ex, "Failed to flush logs: {Message}", ex.Message);
-			}
+			Log.Information("Application exiting");
+			Log.CloseAndFlush();
 			base.OnExit(e);
 		}
 	}

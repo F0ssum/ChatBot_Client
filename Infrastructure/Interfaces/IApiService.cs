@@ -1,7 +1,9 @@
 ﻿// Core/Interfaces/IApiService.cs
+
+// Core/Interfaces/IApiService.cs
 using ChatBotClient.Core.Models;
 
-namespace ChatBotClient.Core
+namespace ChatBotClient.Infrastructure.Interfaces
 {
 	/// <summary>
 	/// Provides methods for interacting with the server API.

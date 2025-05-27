@@ -1,5 +1,5 @@
 ﻿// Core/Interfaces/IErrorHandler.cs
-namespace ChatBotClient.Core.Interfaces
+namespace ChatBotClient.Infrastructure.Interfaces
 {
 	/// <summary>
 	/// Provides methods for displaying error messages.

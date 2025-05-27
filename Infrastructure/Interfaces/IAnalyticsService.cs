@@ -1,7 +1,9 @@
 ﻿// Core/Interfaces/IAnalyticsService.cs
+
+// Core/Interfaces/IAnalyticsService.cs
 using ChatBotClient.Core.Models;
 
-namespace ChatBotClient.Core
+namespace ChatBotClient.Infrastructure.Interfaces
 {
 	/// <summary>
 	/// Provides methods for managing session ratings and points in a SQLite database.

@@ -2,22 +2,27 @@
 using ChatBotClient.Core.Models;
 using Newtonsoft.Json;
 using Serilog;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ChatBotClient.Infrastructure.Services
 {
-
 	public class OfflineQueueService
 	{
 		private readonly string _queueFile;
-		private readonly object _lock = new object();
+		private readonly object _lock = new();
+		private readonly LocalStorageService _localStorageService;
 
-		public OfflineQueueService(AppConfiguration config)
+		public OfflineQueueService(AppConfiguration config, LocalStorageService localStorageService)
 		{
 			string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 			string basePath = Path.Combine(appDataPath, config.AppName);
 			Directory.CreateDirectory(basePath);
 			_queueFile = Path.Combine(basePath, "offline_queue.json");
+			_localStorageService = localStorageService ?? throw new ArgumentNullException(nameof(localStorageService));
 			Log.Information("OfflineQueueService initialized with queueFile: {QueueFile}", _queueFile);
 		}
 
@@ -44,64 +49,78 @@ namespace ChatBotClient.Infrastructure.Services
 		{
 			List<OfflineQueueItem> queue;
 
-			// Блокировка только для синхронных операций
 			lock (_lock)
 			{
 				queue = LoadQueue();
 				if (queue == null || !queue.Any())
+				{
+					Log.Information("No actions in offline queue to sync");
 					return;
+				}
 			}
 
 			try
 			{
-				foreach (var item in queue)
+				foreach (var item in queue.ToList()) // Создаем копию для итерации
 				{
 					try
 					{
 						if (item.Action == "SendMessage")
 						{
 							var payload = JsonConvert.DeserializeObject<dynamic>(item.Data.ToString());
-							await apiService.SendMessageAsync(
+							var history = JsonConvert.DeserializeObject<List<Message>>(payload.history.ToString());
+							string response = await apiService.SendMessageAsync(
 								(string)payload.userId,
 								(string)payload.message,
-								JsonConvert.DeserializeObject<List<Message>>(payload.history.ToString()),
+								history,
 								(string)payload.language,
 								(string)payload.customPrompt,
 								(double)payload.temperature,
 								(double)payload.topP,
 								(int)payload.maxResponseLength
 							);
-						}
 
-						if (item.Action == "SendAudio")
+							// Сохраняем сообщение и ответ в локальной истории
+							history.Add(new Message { Author = "User", Text = (string)payload.message, Timestamp = DateTime.Now });
+							history.Add(new Message { Author = "Bot", Text = response, Timestamp = DateTime.Now });
+							await _localStorageService.SaveHistoryAsync((string)payload.userId, history);
+
+							queue.Remove(item);
+							Log.Information("Synced offline action: SendMessage for user {UserId}", (string)payload.userId);
+						}
+						else if (item.Action == "SendAudio")
 						{
 							var audioData = JsonConvert.DeserializeObject<(string userId, string filePath)>(item.Data.ToString());
-							await apiService.SendAudioAsync(audioData.userId, audioData.filePath);
+							string response = await apiService.SendAudioAsync(audioData.userId, audioData.filePath);
+
+							// Сохраняем аудио-сообщение и ответ в локальной истории
+							var history = await _localStorageService.GetHistoryAsync(audioData.userId) ?? new List<Message>();
+							history.Add(new Message { Author = "User", Text = "[Audio Message]", Timestamp = DateTime.Now });
+							history.Add(new Message { Author = "Bot", Text = response, Timestamp = DateTime.Now });
+							await _localStorageService.SaveHistoryAsync(audioData.userId, history);
+
+							queue.Remove(item);
+							Log.Information("Synced offline action: SendAudio for user {UserId}", audioData.userId);
+						}
+						else
+						{
+							Log.Warning("Unknown action in queue: {Action}", item.Action);
 							queue.Remove(item);
 						}
-						else if (item.Action == "CreateDiaryEntry")
-						{
-							var payload = JsonConvert.DeserializeObject<dynamic>(item.Data.ToString());
-							await apiService.CreateDiaryEntryAsync(
-								(string)payload.userId,
-								JsonConvert.DeserializeObject<DiaryEntry>(payload.entry.ToString())
-							);
-						}
-						Log.Information("Synced offline action: {Action}", item.Action);
 					}
 					catch (Exception ex)
 					{
 						Log.Error(ex, "Failed to sync offline action: {Action}", item.Action);
+						// Продолжаем обработку других элементов в очереди
 					}
 				}
 
-				// Блокировка для сохранения изменений
 				lock (_lock)
 				{
-					SaveQueue(new List<OfflineQueueItem>());
+					SaveQueue(queue);
 				}
 
-				Log.Information("Offline queue synced and cleared");
+				Log.Information("Offline queue synced successfully");
 			}
 			catch (Exception ex)
 			{
@@ -112,17 +131,40 @@ namespace ChatBotClient.Infrastructure.Services
 
 		private List<OfflineQueueItem> LoadQueue()
 		{
-			if (!File.Exists(_queueFile))
-				return null;
+			lock (_lock)
+			{
+				if (!File.Exists(_queueFile))
+					return null;
 
-			string json = File.ReadAllText(_queueFile);
-			return JsonConvert.DeserializeObject<List<OfflineQueueItem>>(json);
+				try
+				{
+					string json = File.ReadAllText(_queueFile);
+					return JsonConvert.DeserializeObject<List<OfflineQueueItem>>(json);
+				}
+				catch (Exception ex)
+				{
+					Log.Error(ex, "Error loading offline queue from {QueueFile}", _queueFile);
+					return null;
+				}
+			}
 		}
 
 		private void SaveQueue(List<OfflineQueueItem> queue)
 		{
-			string json = JsonConvert.SerializeObject(queue, Formatting.Indented);
-			File.WriteAllText(_queueFile, json);
+			lock (_lock)
+			{
+				try
+				{
+					string json = JsonConvert.SerializeObject(queue, Formatting.Indented);
+					File.WriteAllText(_queueFile, json);
+					Log.Information("Saved offline queue to {QueueFile}", _queueFile);
+				}
+				catch (Exception ex)
+				{
+					Log.Error(ex, "Error saving offline queue to {QueueFile}", _queueFile);
+					throw;
+				}
+			}
 		}
 	}
 }

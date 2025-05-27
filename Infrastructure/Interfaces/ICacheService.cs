@@ -1,5 +1,5 @@
 ﻿// Core/Interfaces/ICacheService.cs
-namespace ChatBotClient.Core
+namespace ChatBotClient.Infrastructure.Interfaces
 {
 	/// <summary>
 	/// Provides methods for caching data with expiration.

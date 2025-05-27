@@ -13,6 +13,7 @@
             <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
             <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
             <converters:ListToStringConverter x:Key="ListToStringConverter" />
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
 
             <!-- Темы и стили -->
             <ResourceDictionary.MergedDictionaries>

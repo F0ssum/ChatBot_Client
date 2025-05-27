@@ -8,6 +8,12 @@
     <RootNamespace>ChatBotClient</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="ViewModel\Icons\**" />
+    <EmbeddedResource Remove="ViewModel\Icons\**" />
+    <None Remove="ViewModel\Icons\**" />
+    <Page Remove="ViewModel\Icons\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="MaterialDesignColors" Version="5.2.1" />
     <PackageReference Include="MaterialDesignThemes" Version="5.2.1" />
@@ -24,9 +30,6 @@
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
     <PackageReference Include="System.Speech" Version="9.0.5" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ViewModel\Icons\" />
   </ItemGroup>
 	
 </Project>

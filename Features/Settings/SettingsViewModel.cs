@@ -4,9 +4,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using System;
 using System.Windows;
 
-namespace ChatBotClient.Features.Settings { 
+namespace ChatBotClient.Features.Settings
+{
 	public partial class SettingsViewModel : ObservableObject
 	{
 		private readonly IServiceProvider _serviceProvider;
@@ -163,7 +165,7 @@ namespace ChatBotClient.Features.Settings {
 		{
 			try
 			{
-				_localStorageService.SaveData(new
+				await _localStorageService.SaveDataAsync("settings", new
 				{
 					ChatSettings = new
 					{
@@ -200,8 +202,6 @@ namespace ChatBotClient.Features.Settings {
 						_notificationSettings.ReminderTime
 					}
 				});
-				var apiService = _serviceProvider.GetService<ApiService>();
-				apiService?.SetModelMode(_modelSettings.IsLocalModel);
 				IsSaveSettingsModalVisible = false;
 				await _notificationSettings.NotifyAsync("Настройки сохранены");
 				Log.Information("Settings saved");

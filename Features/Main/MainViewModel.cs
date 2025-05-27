@@ -1,6 +1,5 @@
 ﻿using ChatBotClient.Features.Chat.Views;
 using ChatBotClient.Features.Diary.Views;
-using ChatBotClient.Features.PrivacyPolicy.Views;
 using ChatBotClient.Features.Services;
 using ChatBotClient.Features.Settings.Views;
 using ChatBotClient.Features.Tree.Views;
@@ -9,6 +8,7 @@ using ChatBotClient.ViewModel.Settings;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 using Serilog;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -24,6 +24,9 @@ namespace ChatBotClient.Features.Main
 		private readonly LocalStorageService _localStorageService;
 		private bool _isNavMenuVisible;
 		private bool _isMaximized;
+		private bool _isWelcomeModalVisible;
+		private string _username;
+		private string _avatarPath;
 		private ObservableCollection<string> _notifications;
 		private int _totalPoints;
 
@@ -37,6 +40,24 @@ namespace ChatBotClient.Features.Main
 		{
 			get => _isMaximized;
 			set => SetProperty(ref _isMaximized, value);
+		}
+
+		public bool IsWelcomeModalVisible
+		{
+			get => _isWelcomeModalVisible;
+			set => SetProperty(ref _isWelcomeModalVisible, value);
+		}
+
+		public string Username
+		{
+			get => _username;
+			set => SetProperty(ref _username, value);
+		}
+
+		public string AvatarPath
+		{
+			get => _avatarPath;
+			set => SetProperty(ref _avatarPath, value);
 		}
 
 		public ObservableCollection<string> Notifications
@@ -61,12 +82,11 @@ namespace ChatBotClient.Features.Main
 			_analyticsService = serviceProvider.GetService<AnalyticsService>() ?? throw new InvalidOperationException("AnalyticsService not registered");
 			_localStorageService = serviceProvider.GetService<LocalStorageService>() ?? throw new InvalidOperationException("LocalStorageService not registered");
 			Notifications = new ObservableCollection<string>();
-			InitializeAsync();
 			Log.Information("MainViewModel initialized");
 		}
 
 		[RelayCommand]
-		private async Task InitializeAsync()
+		public async Task InitializeAsync()
 		{
 			try
 			{
@@ -74,8 +94,9 @@ namespace ChatBotClient.Features.Main
 				var userId = userIds?.Count > 0 ? userIds[0] : null;
 				if (string.IsNullOrEmpty(userId))
 				{
-					AddNotification("Требуется авторизация");
-					NavigateToLogin();
+					IsWelcomeModalVisible = true;
+					AddNotification("Добро пожаловать! Укажите имя пользователя.");
+					Log.Information("First-time user detected, showing welcome modal");
 					return;
 				}
 				TotalPoints = await _analyticsService.GetTotalPointsAsync(userId);
@@ -87,6 +108,74 @@ namespace ChatBotClient.Features.Main
 				Log.Error(ex, "Failed to initialize MainViewModel");
 				AddNotification($"Ошибка инициализации: {ex.Message}");
 			}
+		}
+
+		[RelayCommand]
+		private void SelectAvatar()
+		{
+			try
+			{
+				var openFileDialog = new OpenFileDialog
+				{
+					Title = "Выберите аватар",
+					Filter = "Изображения (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg"
+				};
+				if (openFileDialog.ShowDialog() == true)
+				{
+					AvatarPath = openFileDialog.FileName;
+					Log.Information("Avatar selected: {AvatarPath}", AvatarPath);
+				}
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex, "Failed to select avatar");
+				AddNotification($"Ошибка выбора аватара: {ex.Message}");
+			}
+		}
+
+		[RelayCommand]
+		private async Task SaveWelcomeAsync()
+		{
+			if (string.IsNullOrWhiteSpace(Username))
+			{
+				AddNotification("Имя пользователя не может быть пустым.");
+				Log.Warning("Attempted to save welcome without username");
+				return;
+			}
+
+			try
+			{
+				// Create UserId via LocalStorageService
+				string userId = await _localStorageService.CreateUserIdAsync(Username);
+
+				// Save avatar if selected
+				if (!string.IsNullOrEmpty(AvatarPath))
+				{
+					await _localStorageService.SaveAvatarAsync(userId, AvatarPath);
+				}
+
+				IsWelcomeModalVisible = false;
+				TotalPoints = await _analyticsService.GetTotalPointsAsync(userId);
+				NavigateToChat();
+				await _notificationSettings.NotifyAsync("Профиль создан!");
+				Log.Information("User profile created with UserId: {UserId}", userId);
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex, "Failed to save welcome data");
+				AddNotification($"Ошибка сохранения профиля: {ex.Message}");
+			}
+		}
+
+		[RelayCommand]
+		private void CancelWelcome()
+		{
+			Username = string.Empty;
+			AvatarPath = null;
+			IsWelcomeModalVisible = false;
+			AddNotification("Создание профиля отменено. Требуется авторизация.");
+			Log.Information("Welcome modal cancelled");
+			NavigateToLogin();
 		}
 
 		[RelayCommand]
@@ -122,14 +211,6 @@ namespace ChatBotClient.Features.Main
 		}
 
 		[RelayCommand]
-		private void NavigateToPrivacyPolicy()
-		{
-			_navigationService.NavigateTo<PrivacyPolicyPage>();
-			IsNavMenuVisible = false;
-			Log.Information("Navigated to PrivacyPolicyPage");
-		}
-
-		[RelayCommand]
 		private void ToggleNavMenu()
 		{
 			IsNavMenuVisible = !IsNavMenuVisible;
@@ -160,17 +241,17 @@ namespace ChatBotClient.Features.Main
 
 		public void NavigateToLogin()
 		{
-			AddNotification("Требуется вход в систему");
-			Log.Warning("Navigated to Login (placeholder)");
-			// Здесь должна быть навигация на страницу логина, если реализована
+			IsWelcomeModalVisible = true; // Reopen welcome modal instead of login
+			AddNotification("Требуется создать профиль");
+			Log.Information("Navigated to Welcome modal (login)");
 		}
 
 		private void AddNotification(string message)
 		{
 			Notifications.Add($"{DateTime.Now:HH:mm:ss}: {message}");
 			OnPropertyChanged(nameof(HasNotifications));
-			_notificationSettings?.NotifyAsync("Notification received");
-			Log.Information("Added notification: {Message}", message);
+			_notificationSettings?.NotifyAsync(message);
+			Log.Information("Notification added: {Message}", message);
 		}
 	}
 }

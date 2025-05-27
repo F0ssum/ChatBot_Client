@@ -3,7 +3,7 @@ using ChatBotClient.Features.Chat.Views;
 using ChatBotClient.Features.Main;
 using ChatBotClient.Features.Services;
 using ChatBotClient.Infrastructure.Services;
-using ChatBotClient.ViewModel.Settings;
+using ChatBotClient.ViewModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,16 +16,12 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 
-namespace ChatBotClient.ViewModel
+namespace ChatBotClient.Features.Diary
 {
 	public partial class DiaryViewModel : ObservableObject
 	{
 		private readonly IServiceProvider _serviceProvider;
-		private readonly ApiService _apiService;
 		private readonly LocalStorageService _localStorageService;
-		private readonly CacheService _cacheService;
-		private readonly OfflineQueueService _queueService;
-		private readonly NotificationSettingsViewModel _notificationSettings;
 		private readonly NavigationService _navigationService;
 		private readonly string _userId;
 		private string _newNoteContent;
@@ -166,16 +162,11 @@ namespace ChatBotClient.ViewModel
 			set => SetProperty(ref _triggers, value);
 		}
 
-		public DiaryViewModel(ApiService apiService, LocalStorageService localStorageService, CacheService cacheService,
-			OfflineQueueService queueService, NavigationService navigationService, IServiceProvider serviceProvider)
+		public DiaryViewModel(LocalStorageService localStorageService,NavigationService navigationService, IServiceProvider serviceProvider)
 		{
-			_apiService = apiService ?? throw new ArgumentNullException(nameof(apiService));
 			_localStorageService = localStorageService ?? throw new ArgumentNullException(nameof(localStorageService));
-			_cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-			_queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
 			_navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
 			_serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-			_notificationSettings = serviceProvider.GetService<NotificationSettingsViewModel>() ?? throw new InvalidOperationException("NotificationSettingsViewModel not registered");
 			var (userIds, _) = _localStorageService.LoadUserData();
 			_userId = userIds?.Count > 0 ? userIds[0] : null;
 			Triggers = new ObservableCollection<string>();
@@ -197,10 +188,10 @@ namespace ChatBotClient.ViewModel
 
 			try
 			{
-				var entries = await _apiService.GetDiaryEntriesAsync(_userId);
-				Entries = new ObservableCollection<DiaryEntry>(entries);
-				var tags = await _apiService.GetDiaryTagsAsync(_userId);
-				Tags = new ObservableCollection<string>(tags);
+				var entries = await _localStorageService.GetDiaryEntriesAsync(_userId);
+				_entries = new ObservableCollection<DiaryEntry>(entries);
+				List<string> tags = await _localStorageService.GetDiaryTagsAsync(_userId);
+				_tags = new ObservableCollection<string>(tags);
 				await UpdateMoodChartAsync();
 				Log.Information("Diary entries and tags loaded for user {UserId}", _userId);
 			}
@@ -237,18 +228,17 @@ namespace ChatBotClient.ViewModel
 
 			try
 			{
-				await _apiService.CreateDiaryEntryAsync(_userId, entry);
-				Entries.Add(entry);
-				if (!string.IsNullOrEmpty(NewTag) && !Tags.Contains(NewTag))
+				await _localStorageService.CreateDiaryEntryAsync(_userId, entry);
+				_entries.Add(entry);
+				if (!string.IsNullOrEmpty(NewTag) && !_tags.Contains(NewTag))
 				{
-					await _apiService.AddDiaryTagAsync(_userId, NewTag);
-					Tags.Add(NewTag);
+					await _localStorageService.AddDiaryTagAsync(_userId, NewTag);
+					_tags.Add(NewTag);
 				}
 				CreateNoteModalVisibility = false;
 				NewNoteContent = string.Empty;
 				NewTag = string.Empty;
 				SelectedEmoji = string.Empty;
-				await _notificationSettings.NotifyAsync("Diary entry saved");
 				var analyticsService = _serviceProvider.GetService<AnalyticsService>();
 				await analyticsService.AddPointsAsync(_userId, 10, "DiaryEntry");
 				await UpdateMoodChartAsync();
@@ -257,8 +247,7 @@ namespace ChatBotClient.ViewModel
 			catch (Exception ex)
 			{
 				Log.Error(ex, "Failed to save diary entry: {Content}", NewNoteContent);
-				_queueService.QueueAction("CreateDiaryEntry", new { userId = _userId, entry });
-				MessageBox.Show($"Failed to save diary entry. Action queued for sync.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+				MessageBox.Show($"Failed to save diary entry: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		}
 
@@ -297,16 +286,15 @@ namespace ChatBotClient.ViewModel
 
 			try
 			{
-				await _apiService.CreateDiaryEntryAsync(_userId, entry);
-				Entries.Add(entry);
-				if (!Tags.Contains("Quick"))
+				await _localStorageService.CreateDiaryEntryAsync(_userId, entry);
+				_entries.Add(entry);
+				if (!_tags.Contains("Quick"))
 				{
-					await _apiService.AddDiaryTagAsync(_userId, "Quick");
-					Tags.Add("Quick");
+					await _localStorageService.AddDiaryTagAsync(_userId, "Quick");
+					_tags.Add("Quick");
 				}
 				QuickNoteModalVisibility = false;
 				QuickNoteContent = string.Empty;
-				await _notificationSettings.NotifyAsync("Quick note saved");
 				var analyticsService = _serviceProvider.GetService<AnalyticsService>();
 				await analyticsService.AddPointsAsync(_userId, 5, "QuickNote");
 				await UpdateMoodChartAsync();
@@ -315,8 +303,7 @@ namespace ChatBotClient.ViewModel
 			catch (Exception ex)
 			{
 				Log.Error(ex, "Failed to save quick note: {Content}", QuickNoteContent);
-				_queueService.QueueAction("CreateDiaryEntry", new { userId = _userId, entry });
-				MessageBox.Show($"Failed to save quick note. Action queued for sync.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+				MessageBox.Show($"Failed to save quick note: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		}
 
@@ -336,13 +323,12 @@ namespace ChatBotClient.ViewModel
 
 			try
 			{
-				await _apiService.AddDiaryTagAsync(_userId, NewTag);
-				if (!Tags.Contains(NewTag))
+				await _localStorageService.AddDiaryTagAsync(_userId, NewTag);
+				if (!_tags.Contains(NewTag))
 				{
-					Tags.Add(NewTag);
+					_tags.Add(NewTag);
 				}
 				NewTag = string.Empty;
-				await _notificationSettings.NotifyAsync($"Tag {NewTag} added");
 				Log.Information("Added tag: {Tag} for user {UserId}", NewTag, _userId);
 			}
 			catch (Exception ex)
@@ -378,10 +364,9 @@ namespace ChatBotClient.ViewModel
 		{
 			try
 			{
-				await _apiService.ArchiveDiaryEntriesAsync(_userId);
-				Entries.Clear();
+				await _localStorageService.ArchiveDiaryEntriesAsync(_userId);
+				_entries.Clear();
 				ArchiveNotesModalVisibility = false;
-				await _notificationSettings.NotifyAsync("Diary entries archived");
 				Log.Information("Archived diary entries for user {UserId}", _userId);
 			}
 			catch (Exception ex)
@@ -411,9 +396,8 @@ namespace ChatBotClient.ViewModel
 
 				if (saveFileDialog.ShowDialog() == true)
 				{
-					var json = Newtonsoft.Json.JsonConvert.SerializeObject(Entries, Newtonsoft.Json.Formatting.Indented);
+					var json = Newtonsoft.Json.JsonConvert.SerializeObject(_entries, Newtonsoft.Json.Formatting.Indented);
 					File.WriteAllText(saveFileDialog.FileName, json);
-					await _notificationSettings.NotifyAsync("Diary entries exported");
 					Log.Information("Exported diary entries to {FilePath}", saveFileDialog.FileName);
 				}
 			}
@@ -443,7 +427,7 @@ namespace ChatBotClient.ViewModel
 		{
 			try
 			{
-				var triggers = await _apiService.GetTriggersAsync(_userId);
+				var triggers = await _localStorageService.GetTriggersAsync(_userId);
 				Triggers = new ObservableCollection<string>(triggers);
 				Log.Information("Loaded triggers for user {UserId}", _userId);
 			}
@@ -507,7 +491,7 @@ namespace ChatBotClient.ViewModel
 
 		private void FilterEntries()
 		{
-			var filteredEntries = Entries.AsEnumerable();
+			var filteredEntries = _entries.AsEnumerable();
 
 			if (!string.IsNullOrEmpty(NewTag))
 			{
@@ -520,7 +504,7 @@ namespace ChatBotClient.ViewModel
 											   e.Content.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
 			}
 
-			Entries = new ObservableCollection<DiaryEntry>(filteredEntries);
+			_entries = new ObservableCollection<DiaryEntry>(filteredEntries);
 			Log.Information("Filtered entries by tag: {Tag}, search: {SearchQuery}", NewTag, SearchQuery);
 		}
 
@@ -528,11 +512,11 @@ namespace ChatBotClient.ViewModel
 		{
 			IEnumerable<DiaryEntry> sortedEntries = _sortMode switch
 			{
-				0 => Entries.OrderByDescending(e => e.Date),
-				1 => Entries.OrderBy(e => string.Join(",", e.Tags)),
-				_ => Entries
+				0 => _entries.OrderByDescending(e => e.Date),
+				1 => _entries.OrderBy(e => string.Join(",", e.Tags)),
+				_ => _entries
 			};
-			Entries = new ObservableCollection<DiaryEntry>(sortedEntries);
+			_entries = new ObservableCollection<DiaryEntry>(sortedEntries);
 			Log.Information("Sorted entries by mode: {SortMode}", _sortMode);
 		}
 	}

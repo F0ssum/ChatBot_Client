@@ -1,4 +1,4 @@
-﻿namespace ChatBotClient.Core.Interfaces
+﻿namespace ChatBotClient.Infrastructure.Interfaces
 {
 	/// <summary>
 	/// Provides methods for queuing actions to be synchronized when online.

@@ -1,7 +1,7 @@
 ﻿// Core/Interfaces/INavigationService.cs
 using System.Windows.Controls;
 
-namespace ChatBotClient.Core
+namespace ChatBotClient.Infrastructure.Interfaces
 {
 	/// <summary>
 	/// Provides methods for navigating between pages in the application.

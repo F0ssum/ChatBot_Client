@@ -1,5 +1,5 @@
 ﻿// Core/Interfaces/INotificationService.cs
-namespace ChatBotClient.Core.Interfaces
+namespace ChatBotClient.Infrastructure.Interfaces
 {
 	/// <summary>
 	/// Provides methods for displaying notifications with optional sound.

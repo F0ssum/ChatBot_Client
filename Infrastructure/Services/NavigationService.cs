@@ -1,4 +1,4 @@
-﻿using ChatBotClient.Core;
+﻿using ChatBotClient.Infrastructure.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows.Controls;
 

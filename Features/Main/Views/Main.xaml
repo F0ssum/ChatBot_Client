@@ -11,6 +11,7 @@
         WindowStartupLocation="CenterScreen"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display">
+
     <Grid>
         <Border Style="{StaticResource BaseBorderStyle}" Margin="10" Effect="{StaticResource DropShadowEffect}">
             <Grid Margin="10">
@@ -52,7 +53,7 @@
                 <Border Grid.Row="3" Style="{StaticResource BaseBorderStyle}" Margin="0,10,0,0" 
                         Visibility="{Binding HasNotifications, Converter={StaticResource BooleanToVisibilityConverter}}"
                         Effect="{StaticResource DropShadowEffect}">
-                    <ListBox ItemsSource="{Binding Notifications}" MaxHeight="100" Margin="10">
+                    <ListBox ItemsSource="{Binding Notifications}" MaxHeight="100" Margin="10" Style="{StaticResource ListBoxStyle}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding}" Style="{StaticResource BaseTextStyle}" TextWrapping="Wrap"/>
@@ -103,7 +104,72 @@
                     </EventTrigger>
                 </Border.Triggers>
                 <Border.RenderTransform>
-                    <ScaleTransform CenterX="100" CenterY="100"/>
+                    <ScaleTransform CenterX="100" CenterY="150"/>
+                </Border.RenderTransform>
+            </Border>
+        </Border>
+
+        <!-- Модальное окно приветствия -->
+        <Border Background="{StaticResource ModalOverlayBrush}" 
+                Visibility="{Binding IsWelcomeModalVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Style="{StaticResource BaseBorderStyle}" Width="400" Height="300" 
+                    VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Effect="{StaticResource DropShadowEffect}">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Заголовок -->
+                    <TextBlock Text="Приветствую, смотрю ты у нас новенький!" 
+                               Style="{StaticResource BaseTextStyle}" FontSize="16" 
+                               TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
+                    <!-- Поля ввода -->
+                    <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                        <TextBox materialDesign:HintAssist.Hint="Имя пользователя" 
+                                 Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource ModernTextBoxStyle}" 
+                                 Margin="0,0,0,10"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="Загрузить аватар" 
+                                    Style="{StaticResource ModernButtonStyle}" 
+                                    Command="{Binding SelectAvatarCommand}" Margin="0,0,10,0"/>
+                            <Image Source="{Binding AvatarPath}" Width="50" Height="50" 
+                                   Visibility="{Binding AvatarPath, Converter={StaticResource NullToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Кнопки -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Content="Сохранить" 
+                                Style="{StaticResource ModernButtonStyle}" 
+                                Command="{Binding SaveWelcomeCommand}" Margin="0,0,10,0"/>
+                        <Button Content="Отмена" 
+                                Style="{StaticResource ModernButtonStyle}" 
+                                Command="{Binding CancelWelcomeCommand}"/>
+                    </StackPanel>
+                </Grid>
+                <Border.Triggers>
+                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"
+                                                 EasingFunction="{StaticResource MaterialDesignEasingFunction}"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" 
+                                                 From="0" To="1" Duration="0:0:0.3"
+                                                 EasingFunction="{StaticResource MaterialDesignEasingFunction}"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" 
+                                                 From="0" To="1" Duration="0:0:0.3"
+                                                 EasingFunction="{StaticResource MaterialDesignEasingFunction}"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Border.Triggers>
+                <Border.RenderTransform>
+                    <ScaleTransform CenterX="200" CenterY="150"/>
                 </Border.RenderTransform>
             </Border>
         </Border>

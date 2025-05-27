@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using NAudio.Wave;
 using Serilog;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Speech.Recognition;
@@ -91,20 +92,23 @@ namespace ChatBotClient.ViewModel
 			set => SetProperty(ref _sessionRating, value);
 		}
 
-		public ChatViewModel(string id, IServiceProvider serviceProvider, ApiService apiService,
+		public ChatViewModel(IServiceProvider serviceProvider, ApiService apiService,
 							LocalStorageService localStorageService, NavigationService navigationService,
 							NotificationSettingsViewModel notificationSettings, OfflineQueueService queueService)
 		{
-			_userId = id ?? throw new ArgumentNullException(nameof(id));
 			_serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 			_apiService = apiService ?? throw new ArgumentNullException(nameof(apiService));
 			_localStorageService = localStorageService ?? throw new ArgumentNullException(nameof(localStorageService));
 			_navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
 			_notificationSettings = notificationSettings ?? throw new ArgumentNullException(nameof(notificationSettings));
 			_queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
+
+			// Retrieve UserId from LocalStorageService
+			var (userIds, _) = _localStorageService.LoadUserData();
+			_userId = userIds?.Count > 0 ? userIds[0] : throw new InvalidOperationException("User ID not found");
+
 			Messages = new ObservableCollection<Message>();
 			ChatHistory = new ObservableCollection<string>();
-			InitializeAsync();
 			Log.Information("ChatViewModel initialized with ID {Id}", _userId);
 		}
 
@@ -148,7 +152,9 @@ namespace ChatBotClient.ViewModel
 				Messages.Add(new Message { Text = response, Author = "Bot", Timestamp = DateTime.Now, StatusCode = MessageStatus.Sent });
 				MessageText = "";
 				await _notificationSettings.NotifyAsync("Новое сообщение получено");
-				// Предложить упражнение с вероятностью 20%
+				// Save chat messages
+				await _localStorageService.SaveDataAsync($"chat_{_userId}.json", Messages.ToList());
+				// Suggest exercise with 20% probability
 				if (new Random().NextDouble() < 0.2)
 				{
 					Messages.Add(new Message
@@ -159,11 +165,12 @@ namespace ChatBotClient.ViewModel
 						StatusCode = MessageStatus.Sent
 					});
 					IsExerciseModalVisible = true;
+					await _localStorageService.SaveDataAsync($"chat_{_userId}.json", Messages.ToList());
 				}
-				// Начислить очки
+				// Add points
 				var pointsService = _serviceProvider.GetService<AnalyticsService>();
 				await pointsService.AddPointsAsync(_userId, 5, "Chat");
-				// Показать рейтинг
+				// Show rating
 				IsRatingModalVisible = true;
 			}
 			catch (Exception ex)
@@ -222,10 +229,9 @@ namespace ChatBotClient.ViewModel
 			{
 				Messages.Clear();
 				ChatHistory.Add($"Диалог {DateTime.Now:yyyy-MM-dd HH:mm}");
-				// Сохраняем историю чата
+				// Save chat history
 				await _localStorageService.SaveDataAsync("chat_history.json", ChatHistory.ToList());
-
-				// Создаем пустой список сообщений и сохраняем
+				// Save empty messages
 				await _localStorageService.SaveDataAsync($"chat_{_userId}.json", new List<Message>());
 				NewDialogModalVisibility = false;
 				Log.Information("Started new dialog for user {UserId}", _userId);
@@ -377,6 +383,7 @@ namespace ChatBotClient.ViewModel
 							Timestamp = DateTime.Now,
 							StatusCode = MessageStatus.Sent
 						});
+						await _localStorageService.SaveDataAsync($"chat_{_userId}.json", Messages.ToList());
 						await _notificationSettings.NotifyAsync("Запись остановлена");
 						Log.Information("Stopped audio recording and sent to API");
 					}

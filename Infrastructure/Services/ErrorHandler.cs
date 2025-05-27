@@ -1,4 +1,4 @@
-﻿using ChatBotClient.Core.Interfaces;
+﻿using ChatBotClient.Infrastructure.Interfaces;
 using System.Windows;
 
 namespace ChatBotClient.Infrastructure.Services

@@ -1,11 +1,10 @@
 ﻿using System.Windows;
 using ChatBotClient.Core.Configuration;
 using ChatBotClient.Features.Chat.Views;
+using ChatBotClient.Features.Diary;
 using ChatBotClient.Features.Diary.Views;
 using ChatBotClient.Features.Main;
 using ChatBotClient.Features.Main.Views;
-using ChatBotClient.Features.PrivacyPolicy;
-using ChatBotClient.Features.PrivacyPolicy.Views;
 using ChatBotClient.Features.Services;
 using ChatBotClient.Features.Settings;
 using ChatBotClient.Features.Settings.Views;
@@ -51,7 +50,6 @@ namespace ChatBotClient
 			services.AddSingleton<LocalStorageService>();
 			services.AddSingleton<ApiService>();
 			services.AddSingleton<NotificationService>();
-			services.AddSingleton<CacheService>();
 			services.AddSingleton<OfflineQueueService>();
 			services.AddSingleton<AnalyticsService>();
 
@@ -66,7 +64,6 @@ namespace ChatBotClient
 			services.AddTransient<ModelSettingsViewModel>();
 			services.AddTransient<NotificationSettingsViewModel>();
 			services.AddTransient<TreeViewModel>();
-			services.AddTransient<PrivacyPolicyViewModel>();
 
 			// Views
 			services.AddTransient<Main>();
@@ -74,7 +71,6 @@ namespace ChatBotClient
 			services.AddTransient<DiaryPage>();
 			services.AddTransient<SettingsPage>();
 			services.AddTransient<TreePage>();
-			services.AddTransient<PrivacyPolicyPage>();
 		}
 
 		protected override void OnStartup(StartupEventArgs e)

@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace ChatBotClient.Core.Interfaces
+namespace ChatBotClient.Infrastructure.Interfaces
 {
 	/// <summary>
 	/// Provides methods for saving and loading encrypted data to local storage.

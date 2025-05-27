@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using System;
 using System.Windows;
 
 namespace ChatBotClient.ViewModel.Settings
@@ -19,6 +20,9 @@ namespace ChatBotClient.ViewModel.Settings
 		private string _maxResponseLength = "200";
 		private string _customPrompt = "You are a helpful assistant.";
 		private bool _isAdvancedModelSettingsModalVisible;
+		private string _serverAddress = "https://openrouter.ai";
+		private string _apiToken = "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";
+		private string _selectedModel = "meta-llama/llama-3.3-8b-instruct:free";
 
 		public int CommunicationStyleIndex
 		{
@@ -94,6 +98,24 @@ namespace ChatBotClient.ViewModel.Settings
 			set => SetProperty(ref _isAdvancedModelSettingsModalVisible, value);
 		}
 
+		public string ServerAddress
+		{
+			get => _serverAddress;
+			set => SetProperty(ref _serverAddress, value);
+		}
+
+		public string ApiToken
+		{
+			get => _apiToken;
+			set => SetProperty(ref _apiToken, value);
+		}
+
+		public string SelectedModel
+		{
+			get => _selectedModel;
+			set => SetProperty(ref _selectedModel, value);
+		}
+
 		public ModelSettingsViewModel()
 		{
 			Log.Information("ModelSettingsViewModel initialized");
@@ -146,7 +168,10 @@ namespace ChatBotClient.ViewModel.Settings
 			TopP = 0.9;
 			MaxResponseLength = "200";
 			CustomPrompt = "You are a helpful assistant.";
-			Log.Information("ModelSettingsViewModel reset");
+			ServerAddress = "https://openrouter.ai";
+			ApiToken = "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";
+			SelectedModel = "meta-llama/llama-3.3-8b-instruct:free";
+
 		}
 	}
 }

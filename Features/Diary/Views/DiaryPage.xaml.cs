@@ -28,14 +28,13 @@ namespace ChatBotClient.Features.Diary.Views
 
 		public void OpenEntry(int entryId)
 		{
-			var entry = Entries.FirstOrDefault(e => e.Date.Ticks.GetHashCode() == entryId);
+			var entry = _viewModel.Entries.FirstOrDefault(e => e.Date.Ticks.GetHashCode() == entryId);
 			if (entry != null)
 			{
 				// Можно выделить запись, открыть модальное окно или прокрутить к ней
-				// Например, открыть модальное окно с содержимым:
-				CreateNoteModalVisibility = true;
-				NewNoteContent = entry.Content;
-				SelectedEmoji = entry.Emoji;
+				_viewModel.CreateNoteModalVisibility = true;
+				_viewModel.NewNoteContent = entry.Content;
+				_viewModel.SelectedEmoji = entry.Emoji;
 				// Можно добавить дополнительные поля для отображения
 			}
 		}

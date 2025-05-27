@@ -1,6 +1,7 @@
 ﻿using ChatBotClient.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -20,6 +21,7 @@ namespace ChatBotClient.Features.Chat.Views
 				Loaded += async (s, e) =>
 				{
 					await _viewModel.InitializeAsync();
+					await _viewModel.CheckConnectionAsync(); // Updated to async method
 					Log.Information("ChatPage initialized");
 				};
 			}

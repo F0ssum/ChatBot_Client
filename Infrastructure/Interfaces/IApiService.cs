@@ -1,7 +1,4 @@
-﻿// Core/Interfaces/IApiService.cs
-
-// Core/Interfaces/IApiService.cs
-using ChatBotClient.Core.Models;
+﻿using ChatBotClient.Core.Models;
 
 namespace ChatBotClient.Infrastructure.Interfaces
 {
@@ -28,7 +25,7 @@ namespace ChatBotClient.Infrastructure.Interfaces
 		/// <param name="topP">The top-p sampling parameter.</param>
 		/// <param name="maxResponseLength">The maximum response length.</param>
 		/// <returns>The server or local model response.</returns>
-		Task<string> SendMessageAsync(string userId, string message, List<string> history, string language, string customPrompt, double temperature, double topP, int maxResponseLength);
+		Task<string> SendMessageAsync(string userId, string message, List<string> history, string language, string customPrompt, double temperature, double topP, int maxResponseLength, string userEmotion);
 
 		/// <summary>
 		/// Asynchronously retrieves chat history for a user.
@@ -100,5 +97,15 @@ namespace ChatBotClient.Infrastructure.Interfaces
 		Task ArchiveDiaryEntriesAsync(string userId);
 
 		Task<string> SendAudioAsync(string userId, string filePath);
+
+		/// <summary>
+		/// Проверяет соединение с сервером.
+		/// </summary>
+		Task<bool> PingAsync();
+
+		/// <summary>
+		/// Проверяет соединение с сервером (синхронно).
+		/// </summary>
+		bool Ping();
 	}
 }

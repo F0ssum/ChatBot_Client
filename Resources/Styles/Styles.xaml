@@ -292,7 +292,7 @@
         </Setter>
     </Style>
     
-    <Style TargetType="ToggleButton" x:Key="BaseToggleButtonStyle" BasedOn="{StaticResource MaterialDesignToggleButton}">
+    <Style TargetType="ToggleButton" x:Key="BaseToggleButtonStyle">
         <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="FontSize" Value="14" />

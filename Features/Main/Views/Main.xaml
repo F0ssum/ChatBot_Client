@@ -80,9 +80,6 @@
                     <Button Content="Дерево заботы" Style="{StaticResource CircularNavButtonStyle}" 
                             Tag="{materialDesign:PackIcon Kind=Tree}"
                             Command="{Binding NavigateToTreeCommand}" Margin="0,5"/>
-                    <Button Content="Политика конф." Style="{StaticResource CircularNavButtonStyle}" 
-                            Tag="{materialDesign:PackIcon Kind=Shield}"
-                            Command="{Binding NavigateToPrivacyPolicyCommand}" Margin="0,5"/>
                     <Button Content="Настройки" Style="{StaticResource CircularNavButtonStyle}" 
                             Tag="{materialDesign:PackIcon Kind=Settings}"
                             Command="{Binding NavigateToSettingsCommand}" Margin="0,5"/>

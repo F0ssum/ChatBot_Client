@@ -1,4 +1,5 @@
-﻿using ChatBotClient.Infrastructure.Interfaces;
+﻿using ChatBotClient.Features.Diary.Views;
+using ChatBotClient.Infrastructure.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows.Controls;
 

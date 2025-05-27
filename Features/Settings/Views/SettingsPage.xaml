@@ -88,6 +88,14 @@
                                     <ComboBoxItem Content="Формальный"/>
                                     <ComboBoxItem Content="Игривый"/>
                                 </ComboBox>
+                                <TextBlock Text="Адрес сервера" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
+                                <TextBox Style="{StaticResource ModernTextBoxStyle}" Text="{Binding ModelSettings.ServerAddress}" Margin="0,0,0,10"/>
+                                <TextBlock Text="API токен" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
+                                <TextBox Style="{StaticResource ModernTextBoxStyle}" Text="{Binding ModelSettings.ApiToken}" Margin="0,0,0,10"/>
+                                <TextBlock Text="Модель" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
+                                <TextBox Style="{StaticResource ModernTextBoxStyle}" 
+                                         Text="{Binding ModelSettings.SelectedModel, UpdateSourceTrigger=PropertyChanged}" 
+                                         Margin="0,0,0,10"/>
                                 <Button Content="Расширенные настройки модели" Style="{StaticResource ModernButtonStyle}" Width="200"
                                         Command="{Binding ModelSettings.ShowAdvancedModelSettingsCommand}"/>
                             </StackPanel>
@@ -204,22 +212,24 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="Расширенные настройки модели" FontSize="16" FontWeight="SemiBold"
                                Style="{StaticResource BaseTextStyle}" Margin="0,0,0,10"/>
-                    <StackPanel Grid.Row="1">
-                        <TextBlock Text="Режим запуска" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <RadioButton Content="Локально" IsChecked="{Binding ModelSettings.IsLocalModel}" Margin="0,0,10,0"/>
-                            <RadioButton Content="На сервере" IsChecked="{Binding ModelSettings.IsServerModel}"/>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="Режим запуска" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <RadioButton Content="Локально" IsChecked="{Binding ModelSettings.IsLocalModel}" Margin="0,0,10,0"/>
+                                <RadioButton Content="На сервере" IsChecked="{Binding ModelSettings.IsServerModel}"/>
+                            </StackPanel>
+                            <TextBlock Text="Пользовательский промт" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
+                            <TextBox Style="{StaticResource ModernTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" Height="100"
+                                     Text="{Binding ModelSettings.CustomPrompt}" Margin="0,0,0,10"/>
+                            <TextBlock Text="Температура" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
+                            <Slider Minimum="0" Maximum="1" Value="{Binding ModelSettings.Temperature}" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,0,0,10"/>
+                            <TextBlock Text="Top-p" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
+                            <Slider Minimum="0.1" Maximum="1" Value="{Binding ModelSettings.TopP}" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,0,0,10"/>
+                            <TextBlock Text="Максимальная длина ответа (токены)" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
+                            <TextBox Style="{StaticResource ModernTextBoxStyle}" Text="{Binding ModelSettings.MaxResponseLength}" Margin="0,0,0,10"/>
                         </StackPanel>
-                        <TextBlock Text="Пользовательский промт" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
-                        <TextBox Style="{StaticResource ModernTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" Height="100"
-                                 Text="{Binding ModelSettings.CustomPrompt}" Margin="0,0,0,10"/>
-                        <TextBlock Text="Температура" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
-                        <Slider Minimum="0" Maximum="1" Value="{Binding ModelSettings.Temperature}" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,0,0,10"/>
-                        <TextBlock Text="Top-p" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
-                        <Slider Minimum="0.1" Maximum="1" Value="{Binding ModelSettings.TopP}" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,0,0,10"/>
-                        <TextBlock Text="Максимальная длина ответа (токены)" Style="{StaticResource BaseTextStyle}" Margin="0,0,0,5"/>
-                        <TextBox Style="{StaticResource ModernTextBoxStyle}" Text="{Binding ModelSettings.MaxResponseLength}" Margin="0,0,0,10"/>
-                    </StackPanel>
+                    </ScrollViewer>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
                         <Button Content="Отмена" Style="{StaticResource ModernButtonStyle}" Margin="0,0,10,0"
                                 Command="{Binding ModelSettings.CancelAdvancedModelSettingsCommand}"/>

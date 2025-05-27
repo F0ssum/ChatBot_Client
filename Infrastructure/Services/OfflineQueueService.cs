@@ -88,20 +88,6 @@ namespace ChatBotClient.Infrastructure.Services
 							queue.Remove(item);
 							Log.Information("Synced offline action: SendMessage for user {UserId}", (string)payload.userId);
 						}
-						else if (item.Action == "SendAudio")
-						{
-							var audioData = JsonConvert.DeserializeObject<(string userId, string filePath)>(item.Data.ToString());
-							string response = await apiService.SendAudioAsync(audioData.userId, audioData.filePath);
-
-							// Сохраняем аудио-сообщение и ответ в локальной истории
-							var history = await _localStorageService.GetHistoryAsync(audioData.userId) ?? new List<Message>();
-							history.Add(new Message { Author = "User", Text = "[Audio Message]", Timestamp = DateTime.Now });
-							history.Add(new Message { Author = "Bot", Text = response, Timestamp = DateTime.Now });
-							await _localStorageService.SaveHistoryAsync(audioData.userId, history);
-
-							queue.Remove(item);
-							Log.Information("Synced offline action: SendAudio for user {UserId}", audioData.userId);
-						}
 						else
 						{
 							Log.Warning("Unknown action in queue: {Action}", item.Action);

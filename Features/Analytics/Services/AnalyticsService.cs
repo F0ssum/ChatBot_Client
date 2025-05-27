@@ -41,6 +41,15 @@ namespace ChatBotClient.Features.Services
                         Amount INTEGER,
                         Source TEXT
                     );
+                    CREATE TABLE IF NOT EXISTS EmotionLogs (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        UserId TEXT,
+                        Date TEXT,
+                        Emotion TEXT,
+                        Confidence REAL,
+                        IsSarcasm INTEGER,
+                        Source TEXT
+                    );
                 ";
 				command.ExecuteNonQuery();
 				Log.Information("SQLite database initialized");
@@ -142,6 +151,30 @@ namespace ChatBotClient.Features.Services
 			catch (Exception ex)
 			{
 				Log.Error(ex, "Failed to retrieve total points");
+				throw;
+			}
+		}
+
+		public async Task SaveEmotionAsync(string userId, EmotionAnalysisResult result)
+		{
+			try
+			{
+				using var connection = new SQLiteConnection(_connectionString);
+				await connection.OpenAsync();
+				var command = connection.CreateCommand();
+				command.CommandText = "INSERT INTO EmotionLogs (UserId, Date, Emotion, Confidence, IsSarcasm, Source) VALUES (@userId, @date, @emotion, @confidence, @isSarcasm, @source)";
+				command.Parameters.AddWithValue("@userId", userId);
+				command.Parameters.AddWithValue("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+				command.Parameters.AddWithValue("@emotion", result.Emotion);
+				command.Parameters.AddWithValue("@confidence", result.Confidence);
+				command.Parameters.AddWithValue("@isSarcasm", result.IsSarcasm ? 1 : 0);
+				command.Parameters.AddWithValue("@source", result.Source);
+				await command.ExecuteNonQueryAsync();
+				Log.Information("Saved emotion {Emotion} for user {UserId}", result.Emotion, userId);
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex, "Failed to save emotion");
 				throw;
 			}
 		}

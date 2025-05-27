@@ -14,6 +14,8 @@
             <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
             <converters:ListToStringConverter x:Key="ListToStringConverter" />
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+            <converters:BoolToBrushConverter x:Key="BoolToBrushConverter" />
+            <converters:MessageStatusToStringConverter x:Key="MessageStatusToStringConverter" />
 
             <!-- Темы и стили -->
             <ResourceDictionary.MergedDictionaries>

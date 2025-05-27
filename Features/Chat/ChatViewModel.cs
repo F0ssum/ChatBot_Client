@@ -1,4 +1,5 @@
 ﻿using ChatBotClient.Core.Models;
+using ChatBotClient.Features.Analytics.Services;
 using ChatBotClient.Features.Diary.Views;
 using ChatBotClient.Features.Services;
 using ChatBotClient.Infrastructure.Services;
@@ -13,10 +14,11 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Speech.Recognition;
 using System.Windows;
+using System.Windows.Threading; // Added for DispatcherTimer
 
 namespace ChatBotClient.ViewModel
 {
-	public partial class ChatViewModel : ObservableObject
+	public partial class ChatViewModel : ObservableObject, IDisposable
 	{
 		private readonly IServiceProvider _serviceProvider;
 		private readonly ApiService _apiService;
@@ -24,6 +26,7 @@ namespace ChatBotClient.ViewModel
 		private readonly NavigationService _navigationService;
 		private readonly NotificationSettingsViewModel _notificationSettings;
 		private readonly OfflineQueueService _queueService;
+		private readonly LexiconEmotionAnalyzer _lexiconAnalyzer = new();
 		private readonly string _userId;
 		private ObservableCollection<Message> _messages;
 		private ObservableCollection<string> _chatHistory;
@@ -37,6 +40,8 @@ namespace ChatBotClient.ViewModel
 		private WaveInEvent _waveIn;
 		private WaveFileWriter _waveWriter;
 		private bool _isRecording;
+		private bool _isConnected;
+		private DispatcherTimer _connectionTimer;
 
 		public ObservableCollection<Message> Messages
 		{
@@ -92,6 +97,14 @@ namespace ChatBotClient.ViewModel
 			set => SetProperty(ref _sessionRating, value);
 		}
 
+		public bool IsConnected
+		{
+			get => _isConnected;
+			set => SetProperty(ref _isConnected, value);
+		}
+
+		public string ConnectionStatusText => IsConnected ? "Онлайн" : "Оффлайн";
+
 		public ChatViewModel(IServiceProvider serviceProvider, ApiService apiService,
 							LocalStorageService localStorageService, NavigationService navigationService,
 							NotificationSettingsViewModel notificationSettings, OfflineQueueService queueService)
@@ -103,13 +116,25 @@ namespace ChatBotClient.ViewModel
 			_notificationSettings = notificationSettings ?? throw new ArgumentNullException(nameof(notificationSettings));
 			_queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
 
-			// Retrieve UserId from LocalStorageService
 			var (userIds, _) = _localStorageService.LoadUserData();
 			_userId = userIds?.Count > 0 ? userIds[0] : throw new InvalidOperationException("User ID not found");
 
 			Messages = new ObservableCollection<Message>();
 			ChatHistory = new ObservableCollection<string>();
 			Log.Information("ChatViewModel initialized with ID {Id}", _userId);
+
+			// Initialize DispatcherTimer
+			_connectionTimer = new DispatcherTimer
+			{
+				Interval = TimeSpan.FromSeconds(30) // 30 seconds
+			};
+			_connectionTimer.Tick += ConnectionTimer_Tick;
+			_connectionTimer.Start();
+		}
+
+		private async void ConnectionTimer_Tick(object sender, EventArgs e)
+		{
+			await CheckConnectionAsync();
 		}
 
 		public async Task InitializeAsync()
@@ -134,10 +159,27 @@ namespace ChatBotClient.ViewModel
 			}
 		}
 
+		public async Task CheckConnectionAsync()
+		{
+			try
+			{
+				IsConnected = await _apiService.PingAsync();
+			}
+			catch (Exception ex)
+			{
+				IsConnected = false;
+				Log.Error(ex, "Failed to check connection for user {UserId}", _userId);
+			}
+			OnPropertyChanged(nameof(ConnectionStatusText));
+		}
+
 		[RelayCommand]
 		private async Task SendMessageAsync()
 		{
 			if (string.IsNullOrWhiteSpace(MessageText)) return;
+
+			// Lexicon analysis
+			var lexiconResult = _lexiconAnalyzer.Analyze(MessageText);
 
 			var message = new Message { Text = MessageText, Author = _userId, Timestamp = DateTime.Now, StatusCode = MessageStatus.Sending };
 			Messages.Add(message);
@@ -147,14 +189,13 @@ namespace ChatBotClient.ViewModel
 				string language = _notificationSettings.LangIndex switch { 0 => "ru", 1 => "en", _ => "ru" };
 				int maxResponseLength = int.TryParse(_notificationSettings.MaxResponseLength, out int length) ? length : 200;
 				var response = await _apiService.SendMessageAsync(_userId, MessageText, Messages.ToList(), language,
-					_notificationSettings.CustomPrompt, _notificationSettings.Temperature, _notificationSettings.TopP, maxResponseLength);
+					_notificationSettings.CustomPrompt, _notificationSettings.Temperature, _notificationSettings.TopP, maxResponseLength,
+					lexiconResult.Emotion); // Send emotion to server
 				message.StatusCode = MessageStatus.Sent;
 				Messages.Add(new Message { Text = response, Author = "Bot", Timestamp = DateTime.Now, StatusCode = MessageStatus.Sent });
 				MessageText = "";
 				await _notificationSettings.NotifyAsync("Новое сообщение получено");
-				// Save chat messages
 				await _localStorageService.SaveDataAsync($"chat_{_userId}.json", Messages.ToList());
-				// Suggest exercise with 20% probability
 				if (new Random().NextDouble() < 0.2)
 				{
 					Messages.Add(new Message
@@ -167,10 +208,11 @@ namespace ChatBotClient.ViewModel
 					IsExerciseModalVisible = true;
 					await _localStorageService.SaveDataAsync($"chat_{_userId}.json", Messages.ToList());
 				}
-				// Add points
 				var pointsService = _serviceProvider.GetService<AnalyticsService>();
-				await pointsService.AddPointsAsync(_userId, 5, "Chat");
-				// Show rating
+				if (pointsService != null)
+				{
+					await pointsService.AddPointsAsync(_userId, 5, "Chat");
+				}
 				IsRatingModalVisible = true;
 			}
 			catch (Exception ex)
@@ -192,13 +234,23 @@ namespace ChatBotClient.ViewModel
 				recognizer.SetInputToDefaultAudioDevice();
 				recognizer.LoadGrammar(new DictationGrammar());
 				var tcs = new TaskCompletionSource<string>();
-				recognizer.SpeechRecognized += (s, e) => tcs.TrySetResult(e.Result.Text);
-				recognizer.SpeechRecognitionRejected += (s, e) => tcs.TrySetException(new Exception("Распознавание речи не удалось"));
-				recognizer.RecognizeAsync(RecognizeMode.Single);
-				MessageText = await tcs.Task;
-				Log.Information("Recognized speech: {Text}", MessageText);
-				await SendMessageAsync();
-				await _notificationSettings.NotifyAsync("Голосовое сообщение отправлено");
+				EventHandler<SpeechRecognizedEventArgs> recognizedHandler = (s, e) => tcs.TrySetResult(e.Result.Text);
+				EventHandler<SpeechRecognitionRejectedEventArgs> rejectedHandler = (s, e) => tcs.TrySetException(new Exception("Распознавание речи не удалось"));
+				recognizer.SpeechRecognized += recognizedHandler;
+				recognizer.SpeechRecognitionRejected += rejectedHandler;
+				try
+				{
+					recognizer.RecognizeAsync(RecognizeMode.Single);
+					MessageText = await tcs.Task;
+					Log.Information("Recognized speech: {Text}", MessageText);
+					await SendMessageAsync();
+					await _notificationSettings.NotifyAsync("Голосовое сообщение отправлено");
+				}
+				finally
+				{
+					recognizer.SpeechRecognized -= recognizedHandler;
+					recognizer.SpeechRecognitionRejected -= rejectedHandler;
+				}
 			}
 			catch (Exception ex)
 			{
@@ -210,7 +262,6 @@ namespace ChatBotClient.ViewModel
 		[RelayCommand]
 		private void AttachFile()
 		{
-			// Placeholder for file attachment logic
 			MessageBox.Show("Функция прикрепления файла пока не реализована.", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
 			Log.Information("AttachFile command invoked");
 		}
@@ -229,9 +280,7 @@ namespace ChatBotClient.ViewModel
 			{
 				Messages.Clear();
 				ChatHistory.Add($"Диалог {DateTime.Now:yyyy-MM-dd HH:mm}");
-				// Save chat history
 				await _localStorageService.SaveDataAsync("chat_history.json", ChatHistory.ToList());
-				// Save empty messages
 				await _localStorageService.SaveDataAsync($"chat_{_userId}.json", new List<Message>());
 				NewDialogModalVisibility = false;
 				Log.Information("Started new dialog for user {UserId}", _userId);
@@ -287,7 +336,10 @@ namespace ChatBotClient.ViewModel
 				Log.Information("Started breathing exercise");
 				IsExerciseModalVisible = false;
 				var pointsService = _serviceProvider.GetService<AnalyticsService>();
-				await pointsService.AddPointsAsync(_userId, 15, "Exercise");
+				if (pointsService != null)
+				{
+					await pointsService.AddPointsAsync(_userId, 15, "Exercise");
+				}
 			}
 			catch (Exception ex)
 			{
@@ -309,10 +361,13 @@ namespace ChatBotClient.ViewModel
 			try
 			{
 				var analyticsService = _serviceProvider.GetService<AnalyticsService>();
-				await analyticsService.SaveSessionRatingAsync(_userId, SessionRating + 1); // 0-based to 1-based
-				IsRatingModalVisible = false;
-				await _notificationSettings.NotifyAsync($"Оценка {SessionRating + 1} сохранена");
-				Log.Information("Saved session rating {Rating} for user {UserId}", SessionRating + 1, _userId);
+				if (analyticsService != null)
+				{
+					await analyticsService.SaveSessionRatingAsync(_userId, SessionRating + 1); // 0-based to 1-based
+					IsRatingModalVisible = false;
+					await _notificationSettings.NotifyAsync($"Оценка {SessionRating + 1} сохранена");
+					Log.Information("Saved session rating {Rating} for user {UserId}", SessionRating + 1, _userId);
+				}
 			}
 			catch (Exception ex)
 			{
@@ -333,9 +388,12 @@ namespace ChatBotClient.ViewModel
 		{
 			try
 			{
-				MessageText += emoji;
-				IsEmojiModalVisible = false;
-				Log.Information("Selected emoji: {Emoji}", emoji);
+				if (!string.IsNullOrEmpty(emoji))
+				{
+					MessageText += emoji;
+					IsEmojiModalVisible = false;
+					Log.Information("Selected emoji: {Emoji}", emoji);
+				}
 			}
 			catch (Exception ex)
 			{
@@ -351,55 +409,25 @@ namespace ChatBotClient.ViewModel
 			Log.Information("Closed emoji modal");
 		}
 
-		[RelayCommand]
-		private async Task RecordAudioAsync()
+
+		public void Dispose()
 		{
-			try
+			if (_connectionTimer != null)
 			{
-				if (!_isRecording)
-				{
-					_waveIn = new WaveInEvent();
-					var filePath = Path.Combine(Path.GetTempPath(), $"recording_{DateTime.Now:yyyyMMddHHmmss}.wav");
-					_waveWriter = new WaveFileWriter(filePath, _waveIn.WaveFormat);
-					_waveIn.DataAvailable += (s, e) =>
-					{
-						_waveWriter.Write(e.Buffer, 0, e.BytesRecorded);
-					};
-					_waveIn.StartRecording();
-					_isRecording = true;
-					await _notificationSettings.NotifyAsync("Запись начата");
-					Log.Information("Started audio recording to {FilePath}", filePath);
-				}
-				else
-				{
-					_waveIn.StopRecording();
-					try
-					{
-						var response = await _apiService.SendAudioAsync(_userId, _waveWriter.Filename);
-						Messages.Add(new Message
-						{
-							Text = $"Аудио записано: {response}",
-							Author = _userId,
-							Timestamp = DateTime.Now,
-							StatusCode = MessageStatus.Sent
-						});
-						await _localStorageService.SaveDataAsync($"chat_{_userId}.json", Messages.ToList());
-						await _notificationSettings.NotifyAsync("Запись остановлена");
-						Log.Information("Stopped audio recording and sent to API");
-					}
-					finally
-					{
-						_waveIn.Dispose();
-						_waveWriter.Close();
-						_waveWriter.Dispose();
-						_isRecording = false;
-					}
-				}
+				_connectionTimer.Stop();
+				_connectionTimer.Tick -= ConnectionTimer_Tick;
+				_connectionTimer = null;
 			}
-			catch (Exception ex)
+			if (_waveIn != null)
 			{
-				Log.Error(ex, "Failed to record audio");
-				MessageBox.Show($"Ошибка записи аудио: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+				_waveIn.Dispose();
+				_waveIn = null;
+			}
+			if (_waveWriter != null)
+			{
+				_waveWriter.Close();
+				_waveWriter.Dispose();
+				_waveWriter = null;
 			}
 		}
 	}

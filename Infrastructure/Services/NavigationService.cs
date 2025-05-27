@@ -30,5 +30,15 @@ namespace ChatBotClient.Infrastructure.Services
 
 			_mainFrame.Navigate(page);
 		}
+
+		public void NavigateToDiaryWithEntry(int entryId)
+		{
+			var diaryPage = _serviceProvider.GetService<DiaryPage>();
+			if (diaryPage != null)
+			{
+				diaryPage.OpenEntry(entryId); // реализуйте метод в DiaryPage
+				_mainFrame.Navigate(diaryPage);
+			}
+		}
 	}
 }

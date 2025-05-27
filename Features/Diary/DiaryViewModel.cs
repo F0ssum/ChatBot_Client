@@ -40,10 +40,10 @@ namespace ChatBotClient.Features.Diary
 		private ObservableCollection<string> _triggers;
 
 		[ObservableProperty]
-		private ObservableCollection<DiaryEntry> _entries = new ObservableCollection<DiaryEntry>();
+		private ObservableCollection<DiaryEntry> entries = new ObservableCollection<DiaryEntry>();
 
 		[ObservableProperty]
-		private ObservableCollection<string> _tags = new ObservableCollection<string>();
+		private ObservableCollection<string> tags = new ObservableCollection<string>();
 
 		public string NewNoteContent
 		{
@@ -189,9 +189,9 @@ namespace ChatBotClient.Features.Diary
 			try
 			{
 				var entries = await _localStorageService.GetDiaryEntriesAsync(_userId);
-				_entries = new ObservableCollection<DiaryEntry>(entries);
+				Entries = new ObservableCollection<DiaryEntry>(entries);
 				List<string> tags = await _localStorageService.GetDiaryTagsAsync(_userId);
-				_tags = new ObservableCollection<string>(tags);
+				Tags = new ObservableCollection<string>(tags);
 				await UpdateMoodChartAsync();
 				Log.Information("Diary entries and tags loaded for user {UserId}", _userId);
 			}
@@ -229,11 +229,11 @@ namespace ChatBotClient.Features.Diary
 			try
 			{
 				await _localStorageService.CreateDiaryEntryAsync(_userId, entry);
-				_entries.Add(entry);
-				if (!string.IsNullOrEmpty(NewTag) && !_tags.Contains(NewTag))
+				Entries.Add(entry);
+				if (!string.IsNullOrEmpty(NewTag) && !Tags.Contains(NewTag))
 				{
 					await _localStorageService.AddDiaryTagAsync(_userId, NewTag);
-					_tags.Add(NewTag);
+					Tags.Add(NewTag);
 				}
 				CreateNoteModalVisibility = false;
 				NewNoteContent = string.Empty;
@@ -287,11 +287,11 @@ namespace ChatBotClient.Features.Diary
 			try
 			{
 				await _localStorageService.CreateDiaryEntryAsync(_userId, entry);
-				_entries.Add(entry);
-				if (!_tags.Contains("Quick"))
+				Entries.Add(entry);
+				if (!Tags.Contains("Quick"))
 				{
 					await _localStorageService.AddDiaryTagAsync(_userId, "Quick");
-					_tags.Add("Quick");
+					Tags.Add("Quick");
 				}
 				QuickNoteModalVisibility = false;
 				QuickNoteContent = string.Empty;
@@ -324,9 +324,9 @@ namespace ChatBotClient.Features.Diary
 			try
 			{
 				await _localStorageService.AddDiaryTagAsync(_userId, NewTag);
-				if (!_tags.Contains(NewTag))
+				if (!Tags.Contains(NewTag))
 				{
-					_tags.Add(NewTag);
+					Tags.Add(NewTag);
 				}
 				NewTag = string.Empty;
 				Log.Information("Added tag: {Tag} for user {UserId}", NewTag, _userId);
@@ -365,7 +365,7 @@ namespace ChatBotClient.Features.Diary
 			try
 			{
 				await _localStorageService.ArchiveDiaryEntriesAsync(_userId);
-				_entries.Clear();
+				Entries.Clear();
 				ArchiveNotesModalVisibility = false;
 				Log.Information("Archived diary entries for user {UserId}", _userId);
 			}
@@ -396,7 +396,7 @@ namespace ChatBotClient.Features.Diary
 
 				if (saveFileDialog.ShowDialog() == true)
 				{
-					var json = Newtonsoft.Json.JsonConvert.SerializeObject(_entries, Newtonsoft.Json.Formatting.Indented);
+					var json = Newtonsoft.Json.JsonConvert.SerializeObject(Entries, Newtonsoft.Json.Formatting.Indented);
 					File.WriteAllText(saveFileDialog.FileName, json);
 					Log.Information("Exported diary entries to {FilePath}", saveFileDialog.FileName);
 				}
@@ -491,7 +491,7 @@ namespace ChatBotClient.Features.Diary
 
 		private void FilterEntries()
 		{
-			var filteredEntries = _entries.AsEnumerable();
+			var filteredEntries = Entries.AsEnumerable();
 
 			if (!string.IsNullOrEmpty(NewTag))
 			{
@@ -504,20 +504,20 @@ namespace ChatBotClient.Features.Diary
 											   e.Content.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
 			}
 
-			_entries = new ObservableCollection<DiaryEntry>(filteredEntries);
+			Entries = new ObservableCollection<DiaryEntry>(filteredEntries);
 			Log.Information("Filtered entries by tag: {Tag}, search: {SearchQuery}", NewTag, SearchQuery);
 		}
 
 		private void SortEntries()
 		{
-			IEnumerable<DiaryEntry> sortedEntries = _sortMode switch
+			IEnumerable<DiaryEntry> sortedEntries = SortMode switch
 			{
-				0 => _entries.OrderByDescending(e => e.Date),
-				1 => _entries.OrderBy(e => string.Join(",", e.Tags)),
-				_ => _entries
+				0 => Entries.OrderByDescending(e => e.Date),
+				1 => Entries.OrderBy(e => string.Join(",", e.Tags)),
+				_ => Entries
 			};
-			_entries = new ObservableCollection<DiaryEntry>(sortedEntries);
-			Log.Information("Sorted entries by mode: {SortMode}", _sortMode);
+			Entries = new ObservableCollection<DiaryEntry>(sortedEntries);
+			Log.Information("Sorted entries by mode: {SortMode}", SortMode);
 		}
 	}
 }

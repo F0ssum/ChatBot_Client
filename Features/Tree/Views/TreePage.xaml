@@ -4,12 +4,41 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      xmlns:local="clr-namespace:ChatBotClient.Features.Tree"
       mc:Ignorable="d"
       Background="{StaticResource BackgroundBrush}"
       UseLayoutRounding="True"
       SnapsToDevicePixels="True"
       TextOptions.TextFormattingMode="Display">
     <Grid>
+        <!-- Дерево (можно заменить на картинку или Canvas) -->
+        <Image Source="/Resources/Icons/tree.png" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <Canvas>
+            <ItemsControl ItemsSource="{Binding Leaves}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemContainerStyle>
+                    <Style>
+                        <Setter Property="Canvas.Left" Value="{Binding X}" />
+                        <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Command="{Binding DataContext.OpenDiaryEntryCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                CommandParameter="{Binding}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Emoji}" FontSize="24"/>
+                                <TextBlock Text="{Binding Title}" FontSize="12"/>
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Canvas>
         <Border Style="{StaticResource BaseBorderStyle}" Margin="20" Effect="{StaticResource DropShadowEffect}">
             <Grid Margin="20">
                 <Grid.RowDefinitions>

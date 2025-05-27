@@ -25,5 +25,19 @@ namespace ChatBotClient.Features.Diary.Views
 				MessageBox.Show($"Failed to initialize diary: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		}
+
+		public void OpenEntry(int entryId)
+		{
+			var entry = Entries.FirstOrDefault(e => e.Date.Ticks.GetHashCode() == entryId);
+			if (entry != null)
+			{
+				// Можно выделить запись, открыть модальное окно или прокрутить к ней
+				// Например, открыть модальное окно с содержимым:
+				CreateNoteModalVisibility = true;
+				NewNoteContent = entry.Content;
+				SelectedEmoji = entry.Emoji;
+				// Можно добавить дополнительные поля для отображения
+			}
+		}
 	}
 }
